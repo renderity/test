@@ -10,22 +10,26 @@
 
 	"entries":
 	{
-		"type": "bin",
+		// For standalone build
+		// "type": "bin",
+
+		// For electron build
+		"type": "static",
 
 		"name": "test",
 
 		"include_directories":
 		[
-			// for renderity includes
+			// For renderity includes
 			"$(REPS)",
 
-			// for glslang internal includes, which itself is included in renderity renderers
+			// For glslang internal includes, which itself is included in renderity renderers
 			"$(REPS)/KhronosGroup/glslang",
 
-			// for renderity internal includes
+			// For renderity internal includes
 			"$(REPS)/renderity",
 
-			// for glad internal includes
+			// For glad internal includes
 			"$(REPS)/renderity/renderers/src/glad/include"
 		],
 
@@ -47,6 +51,7 @@
 		[
 			{
 				"file": "$(SRC)/main.cpp",
+
 				"watch_files":
 				[
 					"$(REPS)/renderity/math/src/mat4/mat4.h",
@@ -67,6 +72,7 @@
 
 			{
 				"file": "$(SRC)/renderer-native.cpp",
+
 				"watch_files":
 				[
 					"$(REPS)/renderity/renderers/src/base/renderer.h"
@@ -75,6 +81,7 @@
 
 			{
 				"file": "$(SRC)/opengl.cpp",
+
 				"watch_files":
 				[
 					"$(REPS)/renderity/wrappers/src/renderer/renderer.h",
@@ -91,6 +98,7 @@
 
 			{
 				"file": "$(SRC)/vulkan.cpp",
+
 				"watch_files":
 				[
 					"$(REPS)/renderity/wrappers/src/renderer/renderer.h",
@@ -126,6 +134,8 @@
 
 			{
 				"file": "$(REPS)/renderity/renderers/build/$(ENV)/output/$(LIB_EXT)/renderers.$(LIB_EXT)",
+				"do": "genmake $(ENV) $(REPS)/renderity/renderers/genmake.json",
+
 				"watch_files3":
 				[
 					"$(REPS)/renderity/renderers/src/base/renderer.h",
@@ -133,8 +143,7 @@
 					"$(REPS)/renderity/renderers/src/opengl/opengl.h",
 					"$(REPS)/renderity/renderers/src/vulkan/vulkan.cpp",
 					"$(REPS)/renderity/renderers/src/vulkan/vulkan.h"
-				],
-				"do": "genmake $(ENV) $(REPS)/renderity/renderers/genmake.json"
+				]
 			}
 		]
 	}
