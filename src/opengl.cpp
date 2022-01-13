@@ -22,7 +22,6 @@ extern void constructRenderityWrappers (void);
 
 // Declare global to access from electron.
 extern RDTY::RENDERERS::Renderer* renderer_native;
-RDTY::OPENGL::RendererOffscreen* _renderer {};
 
 
 
@@ -39,16 +38,16 @@ void initOpengl (void)
 	extern RDTY::WRAPPERS::Object* object2;
 
 	// RDTY::OPENGL::Renderer* _renderer { new RDTY::OPENGL::Renderer { renderer } };
-	_renderer = new RDTY::OPENGL::RendererOffscreen { renderer };
+	RDTY::OPENGL::RendererOffscreen* _renderer { new RDTY::OPENGL::RendererOffscreen { renderer } };
 
 	renderer_native = _renderer;
 
-	RDTY::OPENGL::Scene* _scene { RS_OPENGL_GET_INSTANCE(Scene, _renderer, scene) };
-	RDTY::OPENGL::Material* _material { RS_OPENGL_GET_INSTANCE(Material, _renderer, material) };
-	RDTY::OPENGL::Material* _material2 { RS_OPENGL_GET_INSTANCE(Material, _renderer, material2) };
-	RDTY::OPENGL::UniformBlock* _uniform_block0 { RS_OPENGL_GET_INSTANCE(UniformBlock, _renderer, uniform_block0) };
-	RDTY::OPENGL::Object* __object { RS_OPENGL_GET_INSTANCE(Object, _renderer, _object) };
-	RDTY::OPENGL::Object* _object2 { RS_OPENGL_GET_INSTANCE(Object, _renderer, object2) };
+	RDTY::OPENGL::Scene* _scene { RDTY_OPENGL_GET_INSTANCE(Scene, _renderer, scene) };
+	RDTY::OPENGL::Material* _material { RDTY_OPENGL_GET_INSTANCE(Material, _renderer, material) };
+	RDTY::OPENGL::Material* _material2 { RDTY_OPENGL_GET_INSTANCE(Material, _renderer, material2) };
+	RDTY::OPENGL::UniformBlock* _uniform_block0 { RDTY_OPENGL_GET_INSTANCE(UniformBlock, _renderer, uniform_block0) };
+	RDTY::OPENGL::Object* __object { RDTY_OPENGL_GET_INSTANCE(Object, _renderer, _object) };
+	RDTY::OPENGL::Object* _object2 { RDTY_OPENGL_GET_INSTANCE(Object, _renderer, object2) };
 
 	GLuint vertex_array {};
 	glGenVertexArrays(1, &vertex_array);
