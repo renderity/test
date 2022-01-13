@@ -41,22 +41,25 @@
 	#define LOGF(x) std::cout << x << std::endl;
 #endif
 
-#include "math/src/mat4/mat4.h"
-#include "math/src/orbit/orbit.h"
-#include "math/src/util/util.h"
+#include "renderity/math/src/mat4/mat4.h"
+#include "renderity/math/src/orbit/orbit.h"
+#include "renderity/math/src/util/util.h"
 
-#include "aux/src/transition-stack/transition-stack.h"
-#include "aux/src/transition/transition.h"
+#include "renderity/aux/src/transition-stack/transition-stack.h"
+#include "renderity/aux/src/transition/transition.h"
 
-#include "wrappers/src/renderer/renderer.h"
-#include "wrappers/src/uniform/uniform.h"
-#include "wrappers/src/uniform-block/uniform-block.h"
-#include "wrappers/src/descriptor-set/descriptor-set.h"
-#include "wrappers/src/material/material.h"
-#include "wrappers/src/object/object.h"
-#include "wrappers/src/scene/scene.h"
+#include "renderity/wrappers/src/renderer/renderer.h"
+#include "renderity/wrappers/src/uniform/uniform.h"
+#include "renderity/wrappers/src/uniform-block/uniform-block.h"
+#include "renderity/wrappers/src/descriptor-set/descriptor-set.h"
+#include "renderity/wrappers/src/material/material.h"
+#include "renderity/wrappers/src/object/object.h"
+#include "renderity/wrappers/src/scene/scene.h"
 
 
+
+RDTY::MATH::Orbit* orbit {};
+RDTY::MATH::Orbit* orbit2 {};
 
 RDTY::WRAPPERS::Renderer* renderer {};
 RDTY::WRAPPERS::Scene* scene {};
@@ -66,8 +69,6 @@ RDTY::WRAPPERS::UniformBlock* uniform_block0 {};
 RDTY::WRAPPERS::UniformBlock* uniform_block1 {};
 RDTY::WRAPPERS::Object* _object {};
 RDTY::WRAPPERS::Object* object2 {};
-RDTY::MATH::Orbit* orbit {};
-RDTY::MATH::Orbit* orbit2 {};
 RDTY::WRAPPERS::DescriptorSet* desc_set1 {};
 RDTY::WRAPPERS::DescriptorSet* desc_set2 {};
 
@@ -158,6 +159,25 @@ extern "C" void logStacks (void)
 
 extern "C" void startTransition (void)
 {
+	// auto ___test = [&] (const size_t& time_gone)
+	// {
+	// 	static size_t prev_time {};
+
+	// 	float temp { curve_values[time_gone - 1] };
+
+	// 	if (time_gone < prev_time)
+	// 	{
+	// 		prev_time = 0;
+	// 	}
+
+	// 	orbit->rotation_speed_x = orbit->rotation_speed_y = temp * (time_gone - prev_time) * 0.01;
+
+	// 	prev_time = time_gone;
+
+	// 	orbit->rotate();
+	// 	orbit->update();
+	// };
+
 	orbit_transition.start2(5000, ___test);
 }
 
@@ -166,7 +186,7 @@ extern "C" void startTransition2 (void)
 	orbit_transition2.start2(5000, ___test2);
 }
 
-void constructRsWrappers (void)
+void constructRenderityWrappers (void)
 {
 	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 

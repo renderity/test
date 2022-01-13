@@ -1,12 +1,12 @@
-#include "wrappers/src/renderer/renderer.h"
-#include "wrappers/src/uniform/uniform.h"
-#include "wrappers/src/uniform-block/uniform-block.h"
-#include "wrappers/src/material/material.h"
-#include "wrappers/src/object/object.h"
-#include "wrappers/src/scene/scene.h"
+#include "renderity/wrappers/src/renderer/renderer.h"
+#include "renderity/wrappers/src/uniform/uniform.h"
+#include "renderity/wrappers/src/uniform-block/uniform-block.h"
+#include "renderity/wrappers/src/material/material.h"
+#include "renderity/wrappers/src/object/object.h"
+#include "renderity/wrappers/src/scene/scene.h"
 
-#include "renderers/src/base/renderer.h"
-#include "renderers/src/opengl/opengl.h"
+#include "renderity/renderers/src/base/renderer.h"
+#include "renderity/renderers/src/opengl/opengl.h"
 
 
 
@@ -16,7 +16,7 @@ using std::endl;
 
 
 
-extern void constructRsWrappers (void);
+extern void constructRenderityWrappers (void);
 
 
 
@@ -28,7 +28,7 @@ RDTY::OPENGL::RendererOffscreen* _renderer {};
 
 void initOpengl (void)
 {
-	constructRsWrappers();
+	constructRenderityWrappers();
 
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
