@@ -19,11 +19,10 @@ using std::endl;
 
 
 
-extern void constructRenderityWrappers (void);
+extern "C" void constructRenderityWrappers (void);
 
 
 
-// Declare global to access from electron.
 extern RDTY::RENDERERS::Renderer* renderer_native;
 
 

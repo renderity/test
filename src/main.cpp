@@ -186,7 +186,7 @@ extern "C" void startTransition2 (void)
 	orbit_transition2.start2(5000, ___test2);
 }
 
-void constructRenderityWrappers (void)
+extern "C" void constructRenderityWrappers (void)
 {
 	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 
