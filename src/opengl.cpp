@@ -22,6 +22,10 @@ extern "C" void constructRenderityWrappers (void);
 
 extern RDTY::RENDERERS::Renderer* renderer_native;
 
+extern size_t render_flag;
+
+const char* opengl_version {};
+
 
 
 void initOpengl (void)
@@ -38,6 +42,8 @@ void initOpengl (void)
 
 	// RDTY::OPENGL::Renderer* _renderer { new RDTY::OPENGL::Renderer { renderer } };
 	RDTY::OPENGL::RendererOffscreen* _renderer { new RDTY::OPENGL::RendererOffscreen { renderer } };
+
+	opengl_version = (const char*) glGetString(GL_VERSION);
 
 	renderer_native = _renderer;
 
@@ -64,7 +70,7 @@ void initOpengl (void)
 
 	glClearColor(0.25f, 0.25f, 0.0f, 1.0f);
 
-	while (1)
+	while (render_flag)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -80,6 +86,10 @@ void initOpengl (void)
 
 		_renderer->endLoop();
 	}
+
+
+
+	_renderer->destroy();
 }
 
 // int main (void)
