@@ -16,7 +16,7 @@ using std::endl;
 
 
 
-extern "C" void constructRenderityWrappers (void);
+// extern "C" void constructRenderityWrappers (void);
 
 
 
@@ -24,13 +24,13 @@ extern RDTY::RENDERERS::Renderer* renderer_native;
 
 extern size_t render_flag;
 
-const char* opengl_version {};
+// const char* opengl_version {};
 
 
 
 void initOpengl (void)
 {
-	constructRenderityWrappers();
+	// constructRenderityWrappers();
 
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
@@ -43,7 +43,7 @@ void initOpengl (void)
 	// RDTY::OPENGL::Renderer* _renderer { new RDTY::OPENGL::Renderer { renderer } };
 	RDTY::OPENGL::RendererOffscreen* _renderer { new RDTY::OPENGL::RendererOffscreen { renderer } };
 
-	opengl_version = (const char*) glGetString(GL_VERSION);
+	// opengl_version = (const char*) glGetString(GL_VERSION);
 
 	renderer_native = _renderer;
 

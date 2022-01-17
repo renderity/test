@@ -19,7 +19,7 @@ using std::endl;
 
 
 
-extern "C" void constructRenderityWrappers (void);
+// extern "C" void constructRenderityWrappers (void);
 
 
 
@@ -32,7 +32,7 @@ extern size_t render_flag;
 // void initVulkan (const VkPhysicalDevice& physical_device = VK_NULL_HANDLE)
 void initVulkan (const size_t& physical_device_index = 0)
 {
-	constructRenderityWrappers();
+	// constructRenderityWrappers();
 
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
