@@ -29,7 +29,8 @@ extern size_t render_flag;
 
 
 
-void initVulkan (void)
+// void initVulkan (const VkPhysicalDevice& physical_device = VK_NULL_HANDLE)
+void initVulkan (const size_t& physical_device_index = 0)
 {
 	constructRenderityWrappers();
 
@@ -45,7 +46,7 @@ void initVulkan (void)
 
 
 	// RDTY::VULKAN::Renderer* _renderer { new RDTY::VULKAN::Renderer { renderer } };
-	RDTY::VULKAN::RendererOffscreen* _renderer { new RDTY::VULKAN::RendererOffscreen { renderer } };
+	RDTY::VULKAN::RendererOffscreen* _renderer { new RDTY::VULKAN::RendererOffscreen { renderer, physical_device_index } };
 
 	renderer_native = _renderer;
 
