@@ -19,9 +19,6 @@ using std::endl;
 
 
 
-// extern "C" void constructRenderityWrappers (void);
-
-
 
 extern RDTY::RENDERERS::Renderer* renderer_native;
 
@@ -32,8 +29,6 @@ extern size_t render_flag;
 // void initVulkan (const VkPhysicalDevice& physical_device = VK_NULL_HANDLE)
 void initVulkan (const size_t& physical_device_index = 0)
 {
-	// constructRenderityWrappers();
-
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
 	extern RDTY::WRAPPERS::Material* material;
@@ -45,7 +40,7 @@ void initVulkan (const size_t& physical_device_index = 0)
 
 
 
-	// RDTY::VULKAN::Renderer* _renderer { new RDTY::VULKAN::Renderer { renderer } };
+	// RDTY::VULKAN::Renderer* _renderer { new RDTY::VULKAN::Renderer { renderer, physical_device_index } };
 	RDTY::VULKAN::RendererOffscreen* _renderer { new RDTY::VULKAN::RendererOffscreen { renderer, physical_device_index } };
 
 	renderer_native = _renderer;
@@ -202,13 +197,6 @@ void initVulkan (const size_t& physical_device_index = 0)
 
 
 	_renderer->destroy();
-}
 
-int main (void)
-{
-	initVulkan();
-
-
-
-	return 0;
+	delete _renderer;
 }
