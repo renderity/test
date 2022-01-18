@@ -27,7 +27,7 @@ extern size_t render_flag;
 
 
 // void initVulkan (const VkPhysicalDevice& physical_device = VK_NULL_HANDLE)
-void initVulkan (const size_t& physical_device_index = 0)
+void initVulkan (const bool& offscreen = false, const size_t& physical_device_index = 0)
 {
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
@@ -38,10 +38,16 @@ void initVulkan (const size_t& physical_device_index = 0)
 	extern RDTY::WRAPPERS::Object* _object;
 	extern RDTY::WRAPPERS::Object* object2;
 
+	RDTY::VULKAN::RendererBase* _renderer {};
 
-
-	// RDTY::VULKAN::Renderer* _renderer { new RDTY::VULKAN::Renderer { renderer, physical_device_index } };
-	RDTY::VULKAN::RendererOffscreen* _renderer { new RDTY::VULKAN::RendererOffscreen { renderer, physical_device_index } };
+	if (offscreen)
+	{
+		_renderer = new RDTY::VULKAN::RendererOffscreen { renderer, physical_device_index };
+	}
+	else
+	{
+		_renderer = new RDTY::VULKAN::Renderer { renderer, physical_device_index };
+	}
 
 	renderer_native = _renderer;
 
@@ -78,77 +84,18 @@ void initVulkan (const size_t& physical_device_index = 0)
 
 	memcpy(vertex_buffer_mem_addr, _scene->wrapper->vertex_data.data(), _scene->wrapper->vertex_data.size() * sizeof(float));
 
+	const VkDeviceSize vertex_buffer_offset {};
 
 
-	// while (render_flag)
-	// {
-	// 	// memcpy(uniform_buffer_mem_addr + 64, ((void*) &orbit) + 64, 64);
-
-	// 	vkAcquireNextImageKHR(_renderer->device.handle, _renderer->swapchain, 0xFFFFFFFF, _renderer->image_available_semaphores[_renderer->curr_image], VK_NULL_HANDLE, &_renderer->image_indices[_renderer->curr_image]);
-
-	// 	// VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-	// 	static const VkCommandBufferBeginInfo command_buffer_bi { CmdBufferBeginI(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) };
-
-	// 	static const VkDeviceSize vertex_buffer_offset {};
-
-	// 	vkWaitForFences(_renderer->device.handle, 1, &_renderer->submission_completed_fences[_renderer->curr_image], VK_TRUE, 0xFFFFFFFF);
-
-	// 	vkBeginCommandBuffer(_renderer->cmd_buffers[_renderer->curr_image], &command_buffer_bi);
-
-
-
-	// 	_desc_set1->use(_material);
-
-	// 	vkCmdBindVertexBuffers(_renderer->cmd_buffers[_renderer->curr_image], 0, 1, &vertex_buffer, &vertex_buffer_offset);
-	// 	vkCmdBeginRenderPass(_renderer->cmd_buffers[_renderer->curr_image], &_renderer->render_pass_bi[_renderer->curr_image], VK_SUBPASS_CONTENTS_INLINE);
-
-	// 	_material->use();
-
-	// 	__object->draw();
-
-	// 	_desc_set2->use(_material2);
-
-	// 	_material2->use();
-
-	// 	_object2->draw();
-
-
-
-	// 	vkCmdEndRenderPass(_renderer->cmd_buffers[_renderer->curr_image]);
-	// 	vkEndCommandBuffer(_renderer->cmd_buffers[_renderer->curr_image]);
-
-	// 	vkResetFences(_renderer->device.handle, 1, &_renderer->submission_completed_fences[_renderer->curr_image]);
-
-	// 	vkQueueSubmit(_renderer->graphics_queue, 1, &_renderer->submit_i[_renderer->curr_image], _renderer->submission_completed_fences[_renderer->curr_image]);
-
-	// 	_renderer->present_i[_renderer->curr_image].pImageIndices = &_renderer->image_indices[_renderer->curr_image];
-
-	// 	vkQueuePresentKHR(_renderer->present_queue, &_renderer->present_i[_renderer->curr_image]);
-
-
-
-	// 	const static uint64_t max_swapchain_image_index { _renderer->swapchain_image_count - 1 };
-
-	// 	if (++_renderer->curr_image > max_swapchain_image_index)
-	// 	{
-	// 		_renderer->curr_image = 0;
-	// 	}
-	// }
 
 	while (render_flag)
 	{
-		static const VkCommandBufferBeginInfo command_buffer_bi { CmdBufferBeginI(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) };
-
-		static const VkDeviceSize vertex_buffer_offset {};
-
-		vkBeginCommandBuffer(_renderer->cmd_buffers[0], &command_buffer_bi);
-
-
+		_renderer->beginLoop();
 
 		_desc_set1->use(_material);
 
-		vkCmdBindVertexBuffers(_renderer->cmd_buffers[0], 0, 1, &vertex_buffer, &vertex_buffer_offset);
-		vkCmdBeginRenderPass(_renderer->cmd_buffers[0], &_renderer->render_pass_bi[0], VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindVertexBuffers(_renderer->cmd_buffers[_renderer->curr_image], 0, 1, &vertex_buffer, &vertex_buffer_offset);
+		vkCmdBeginRenderPass(_renderer->cmd_buffers[_renderer->curr_image], &_renderer->render_pass_bi[_renderer->curr_image], VK_SUBPASS_CONTENTS_INLINE);
 
 		_material->use();
 
@@ -160,38 +107,7 @@ void initVulkan (const size_t& physical_device_index = 0)
 
 		_object2->draw();
 
-
-
-		vkCmdEndRenderPass(_renderer->cmd_buffers[0]);
-
-		VkImageSubresourceLayers image_subresource_layers
-		{
-			VK_IMAGE_ASPECT_COLOR_BIT,
-			0, 0, 1
-		};
-
-		VkBufferImageCopy buffer_image_copy
-		{
-			0, 800, 600,
-			image_subresource_layers,
-			{ 0, 0, 0 },
-			{ 800, 600, 1 },
-		};
-
-		vkCmdCopyImageToBuffer
-		(
-			_renderer->cmd_buffers[0],
-			_renderer->render_images[0],
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			_renderer->pixel_buffer,
-			1, &buffer_image_copy
-		);
-
-		vkEndCommandBuffer(_renderer->cmd_buffers[0]);
-
-		vkQueueSubmit(_renderer->graphics_queue, 1, &_renderer->submit_i[0], nullptr);
-
-		vkDeviceWaitIdle(_renderer->device.handle);
+		_renderer->endLoop();
 	}
 
 

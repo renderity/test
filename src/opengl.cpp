@@ -23,7 +23,7 @@ extern size_t render_flag;
 
 
 
-void initOpengl (void)
+void initOpengl (const bool& offscreen = false)
 {
 	extern RDTY::WRAPPERS::Renderer* renderer;
 	extern RDTY::WRAPPERS::Scene* scene;
@@ -33,8 +33,16 @@ void initOpengl (void)
 	extern RDTY::WRAPPERS::Object* _object;
 	extern RDTY::WRAPPERS::Object* object2;
 
-	// RDTY::OPENGL::Renderer* _renderer { new RDTY::OPENGL::Renderer { renderer } };
-	RDTY::OPENGL::RendererOffscreen* _renderer { new RDTY::OPENGL::RendererOffscreen { renderer } };
+	RDTY::OPENGL::RendererBase* _renderer {};
+
+	if (offscreen)
+	{
+		_renderer = new RDTY::OPENGL::RendererOffscreen { renderer };
+	}
+	else
+	{
+		_renderer = new RDTY::OPENGL::Renderer { renderer };
+	}
 
 	renderer_native = _renderer;
 
