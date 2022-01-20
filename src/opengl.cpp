@@ -1,3 +1,5 @@
+#include <cstddef> // size_t
+
 #include "renderity/wrappers/src/renderer/renderer.h"
 #include "renderity/wrappers/src/uniform/uniform.h"
 #include "renderity/wrappers/src/uniform-block/uniform-block.h"

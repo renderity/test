@@ -1,4 +1,4 @@
-#include <cstddef>
+#include <cstddef> // size_t
 #include <thread>
 
 #include "renderity/renderers/src/base/renderer.h"

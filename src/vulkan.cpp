@@ -1,3 +1,4 @@
+#include <cstddef> // size_t
 #include <cstring>
 
 #include "renderity/wrappers/src/renderer/renderer.h"
