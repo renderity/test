@@ -1,5 +1,4 @@
-// size_t
-#include <cstddef>
+#include <cstddef> // size_t
 #include <cstring>
 #include <vector>
 #include <string>
@@ -201,7 +200,7 @@ extern "C" void constructRenderityWrappers (void)
 				[[block]] struct VertexIn
 				{
 					[[location(0)]] pos : vec3<f32>;
-					[[builtin(vertex_index)]] vi : u32;
+					// [[builtin(vertex_index)]] vi : u32;
 				};
 
 				[[block]] struct VertexOut
@@ -231,6 +230,8 @@ extern "C" void constructRenderityWrappers (void)
 	material2 = new RDTY::WRAPPERS::Material
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
+
+		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::TRUE,
 
 		.glsl100es_code_fragment =
 			R"(
