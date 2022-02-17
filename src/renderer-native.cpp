@@ -1,6 +1,8 @@
 #include <cstddef> // size_t
 #include <thread>
 
+#include "renderity/math/src/quat/quat.h"
+#include "renderity/math/src/mat4/mat4.h"
 #include "renderity/renderers/src/base/renderer.h"
 
 
@@ -58,10 +60,10 @@ size_t render_flag { 1 };
 
 int main (void)
 {
-	constructRenderityWrappers();
+	// constructRenderityWrappers();
 
 	// initOpengl(false);
-	initVulkan(false, 0);
+	// initVulkan(false, 1);
 
 	// runRenderingThread("opengl");
 
@@ -88,6 +90,29 @@ int main (void)
 
 	// // terminateRenderingThread();
 
+
+
+	RDTY::MATH::Mat4 m1
+	{
+		1.0f, 5.0f, 9.0f,  13.0f,
+		2.0f, 6.0f, 10.0f, 14.0f,
+		3.0f, 7.0f, 11.0f, 15.0f,
+		4.0f, 8.0f, 12.0f, 16.0f,
+	};
+
+	RDTY::MATH::Quat q { 1.0f, 5.0f, 9.0f,  13.0f };
+
+	RDTY::MATH::Mat4 m2 { &m1 };
+	RDTY::MATH::Mat4 m3 { &m1 };
+
+	// m2.makeRotationFromQuat32(&q);
+
+	// m2.print();
+
+
+	m3.makeRotationFromQuat128(&q);
+
+	m3.print();
 
 
 	return 0;

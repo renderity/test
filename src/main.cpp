@@ -3,43 +3,6 @@
 #include <vector>
 #include <string>
 
-#ifdef __wasm__
-	extern "C" void console_log (size_t);
-	#define LOG(x) console_log((size_t) x);
-
-	extern "C" void console_log_f (float);
-	#define LOGF(x) console_log_f((float) x);
-
-	extern "C" size_t getTime (void);
-
-
-
-	extern "C" void* getStdVectorData (std::vector<int>& v)
-	{
-		return v.data();
-	}
-
-	extern "C" size_t getStdVectorSize (std::vector<int>& v)
-	{
-		return v.size();
-	}
-
-	extern "C" void* getStdStringData (std::string& s)
-	{
-		return s.data();
-	}
-
-	extern "C" size_t getStdStringSize (std::string& s)
-	{
-		return s.size();
-	}
-#else
-	#include <iostream>
-
-	#define LOG(x) std::cout << x << std::endl;
-	#define LOGF(x) std::cout << x << std::endl;
-#endif
-
 #include "renderity/math/src/mat4/mat4.h"
 #include "renderity/math/src/orbit/orbit.h"
 #include "renderity/math/src/util/util.h"
@@ -50,10 +13,28 @@
 #include "renderity/wrappers/src/renderer/renderer.h"
 #include "renderity/wrappers/src/uniform/uniform.h"
 #include "renderity/wrappers/src/uniform-block/uniform-block.h"
+#include "renderity/wrappers/src/storage-block/storage-block.h"
 #include "renderity/wrappers/src/descriptor-set/descriptor-set.h"
 #include "renderity/wrappers/src/material/material.h"
 #include "renderity/wrappers/src/object/object.h"
 #include "renderity/wrappers/src/scene/scene.h"
+
+
+
+#ifdef __wasm__
+	extern "C" void console_log (size_t);
+	#define LOG(x) console_log((size_t) x);
+
+	extern "C" void console_log_f (float);
+	#define LOGF(x) console_log_f((float) x);
+
+	// extern "C" size_t getTime (void);
+#else
+	#include <iostream>
+
+	#define LOG(x) std::cout << x << std::endl;
+	#define LOGF(x) std::cout << x << std::endl;
+#endif
 
 
 
@@ -70,6 +51,10 @@ RDTY::WRAPPERS::Object* _object {};
 RDTY::WRAPPERS::Object* object2 {};
 RDTY::WRAPPERS::DescriptorSet* desc_set1 {};
 RDTY::WRAPPERS::DescriptorSet* desc_set2 {};
+
+RDTY::WRAPPERS::StorageBlock* storage_block {};
+
+RDTY::WRAPPERS::Material* raycast_material {};
 
 float curve_values [5000];
 RDTY::Transition orbit_transition;
@@ -197,18 +182,18 @@ extern "C" void constructRenderityWrappers (void)
 
 		.wgsl_code_vertex =
 			R"(
-				[[block]] struct VertexIn
+				struct VertexIn
 				{
 					[[location(0)]] pos : vec3<f32>;
 					// [[builtin(vertex_index)]] vi : u32;
 				};
 
-				[[block]] struct VertexOut
+				struct VertexOut
 				{
 					[[builtin(position)]] pos : vec4<f32>;
 				};
 
-				[[block]] struct Camera
+				struct Camera
 				{
 					projection_matrix : mat4x4<f32>;
 					view_matrix : mat4x4<f32>;
@@ -231,7 +216,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::TRUE,
+		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::FALSE,
 
 		.glsl100es_code_fragment =
 			R"(
@@ -303,11 +288,28 @@ extern "C" void constructRenderityWrappers (void)
 				precision highp int;
 				precision highp float;
 
+				// layout (set = 0, binding = 2) buffer _Camera2
+				// {
+				// 	float data [];
+				// } _camera2;
+
+				layout (set = 0, binding = 2) buffer _Camera2
+				{
+					float _camera2 [];
+				};
+
+				// layout (set = 0, binding = 2) buffer _Camera2_UI
+				// {
+				// 	uint _camera2_ui [];
+				// };
+
 				layout (location = 0) out vec4 fragment_color;
 
 				void main (void)
 				{
-					fragment_color = vec4(0.25f, 0.0f, 1.0f, 1.0f);
+					// fragment_color = vec4(0.25f, 0.0f, 1.0f, 1.0f);
+
+					fragment_color = vec4(_camera2[0], 0.0f, 1.0f, 1.0f);
 				}
 			)",
 
@@ -324,7 +326,6 @@ extern "C" void constructRenderityWrappers (void)
 		new RDTY::WRAPPERS::UniformBlock
 		{
 			.binding = 0,
-			.type = RDTY::WRAPPERS::DescriptorBindingType::UNIFORM_BUFFER,
 			.name = "Camera",
 		};
 
@@ -332,7 +333,6 @@ extern "C" void constructRenderityWrappers (void)
 		new RDTY::WRAPPERS::UniformBlock
 		{
 			.binding = 1,
-			.type = RDTY::WRAPPERS::DescriptorBindingType::UNIFORM_BUFFER,
 			.name = "Camera2",
 		};
 
@@ -341,8 +341,8 @@ extern "C" void constructRenderityWrappers (void)
 
 	memcpy(object2->vertex_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f }).data(), 36);
 
-	scene->addObject(*_object);
-	scene->addObject(*object2);
+	// scene->addObject(*_object);
+	// scene->addObject(*object2);
 
 	orbit = new RDTY::MATH::Orbit;
 
@@ -395,4 +395,69 @@ extern "C" void constructRenderityWrappers (void)
 
 	material->descriptor_sets.push_back(desc_set1);
 	material2->descriptor_sets.push_back(desc_set2);
+
+
+
+	float* dd { new float [1] };
+	dd[0] = 0.5f;
+
+
+
+	storage_block =
+		new RDTY::WRAPPERS::StorageBlock
+		{
+			.binding = 2,
+			.data = dd,
+			.size = sizeof(float),
+		};
+
+	desc_set2->bindings.push_back(storage_block);
+
+
+
+	// raycast_material = new RDTY::WRAPPERS::Material
+	// {
+	// 	.glsl_vulkan_code_compute =
+	// 		R"(
+	// 			#version 460
+
+	// 			#extension GL_ARB_separate_shader_objects : enable
+
+	// 			precision highp int;
+	// 			precision highp float;
+
+
+
+	// 			// layout (location = 0) in vec3 in_position;
+
+	// 			// out gl_PerVertex
+	// 			// {
+	// 			// 	vec4 gl_Position;
+	// 			// };
+
+	// 			// layout (set = 0, binding = 0) uniform Camera
+	// 			// {
+	// 			// 	mat4 projection_matrix;
+	// 			// 	mat4 view_matrix;
+	// 			// } camera;
+
+	// 			// layout (set = 0, binding = 1) uniform Camera2
+	// 			// {
+	// 			// 	mat4 view_matrix;
+	// 			// } camera2;
+
+	// 			// void main (void)
+	// 			// {
+	// 			// 	// gl_Position = camera.projection_matrix * camera.view_matrix * camera2.view_matrix * vec4(in_position, 1.0f);
+	// 			// 	gl_Position = camera.projection_matrix * camera.view_matrix * vec4(in_position, 1.0f);
+	// 			// 	// gl_Position = camera2.view_matrix * vec4(in_position, 1.0f);
+	// 			// }
+	// 		)",
+	// };
+}
+
+extern "C" void constructRenderityWrappers2 (void)
+{
+	scene->addObject(*_object);
+	scene->addObject(*object2);
 }

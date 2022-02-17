@@ -11,10 +11,10 @@
 	"entries":
 	{
 		// For standalone build
-		// "type": "bin",
+		"type": "bin",
 
-		// For electron build
-		"type": "static",
+		// // For electron build
+		// "type": "static",
 
 		"name": "test",
 
