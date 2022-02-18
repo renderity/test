@@ -54,7 +54,8 @@ RDTY::WRAPPERS::DescriptorSet* desc_set2 {};
 
 RDTY::WRAPPERS::StorageBlock* storage_block {};
 
-RDTY::WRAPPERS::Material* raycast_material {};
+RDTY::WRAPPERS::Material* surface_material {};
+RDTY::WRAPPERS::Object* surface_object {};
 
 float curve_values [5000];
 RDTY::Transition orbit_transition;
@@ -293,7 +294,7 @@ extern "C" void constructRenderityWrappers (void)
 				// 	float data [];
 				// } _camera2;
 
-				layout (set = 0, binding = 2) buffer _Camera2
+				layout (std430, set = 0, binding = 2) buffer _Camera2
 				{
 					float _camera2 [];
 				};
@@ -398,66 +399,606 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-	float* dd { new float [1] };
-	dd[0] = 0.5f;
-
-
-
 	storage_block =
 		new RDTY::WRAPPERS::StorageBlock
 		{
 			.binding = 2,
-			.data = dd,
+			.data = new float [1] { 0.0f },
 			.size = sizeof(float),
 		};
 
 	desc_set2->bindings.push_back(storage_block);
 
+	surface_object = new RDTY::WRAPPERS::Object;
 
+	memcpy(surface_object->vertex_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, -1.0f, 3.0f, 0.0f, 3.0f, -1.0f, 0.0f }).data(), 36);
 
-	// raycast_material = new RDTY::WRAPPERS::Material
-	// {
-	// 	.glsl_vulkan_code_compute =
-	// 		R"(
-	// 			#version 460
-
-	// 			#extension GL_ARB_separate_shader_objects : enable
-
-	// 			precision highp int;
-	// 			precision highp float;
+	// memcpy(surface_object->index_data.data(), std::vector({ 0, 1, 2 }).data(), 12);
 
 
 
-	// 			// layout (location = 0) in vec3 in_position;
+	surface_material = new RDTY::WRAPPERS::Material
+	{
+		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-	// 			// out gl_PerVertex
-	// 			// {
-	// 			// 	vec4 gl_Position;
-	// 			// };
+		.glsl_vulkan_code_vertex =
+			R"(
+				#version 460
 
-	// 			// layout (set = 0, binding = 0) uniform Camera
-	// 			// {
-	// 			// 	mat4 projection_matrix;
-	// 			// 	mat4 view_matrix;
-	// 			// } camera;
+				#extension GL_ARB_separate_shader_objects : enable
 
-	// 			// layout (set = 0, binding = 1) uniform Camera2
-	// 			// {
-	// 			// 	mat4 view_matrix;
-	// 			// } camera2;
+				precision highp int;
+				precision highp float;
 
-	// 			// void main (void)
-	// 			// {
-	// 			// 	// gl_Position = camera.projection_matrix * camera.view_matrix * camera2.view_matrix * vec4(in_position, 1.0f);
-	// 			// 	gl_Position = camera.projection_matrix * camera.view_matrix * vec4(in_position, 1.0f);
-	// 			// 	// gl_Position = camera2.view_matrix * vec4(in_position, 1.0f);
-	// 			// }
-	// 		)",
-	// };
+				layout (location = 0) in vec3 in_position;
+
+				layout (location = 0) out VertexOut
+				{
+					vec3 position_ndc;
+				};
+
+
+
+				void main (void)
+				{
+					gl_Position = vec4(in_position, 1.0f);
+
+					position_ndc = in_position;
+				}
+			)",
+
+		.glsl_vulkan_code_fragment =
+			R"(
+				#version 460
+
+				#extension GL_ARB_separate_shader_objects : enable
+
+				precision highp int;
+				precision highp float;
+
+
+
+
+				layout (std430, set = 0, binding = 0) buffer ScenePositionData
+				{
+					float scene_position_data [];
+				};
+
+				layout (std430, set = 0, binding = 1) buffer SceneNormalData
+				{
+					float scene_normal_data [];
+				};
+
+				layout (std430, set = 0, binding = 2) buffer SceneColorData
+				{
+					float scene_color_data [];
+				};
+
+				layout (std430, set = 0, binding = 3) buffer SceneIndexData
+				{
+					uint scene_index_data [];
+				};
+
+
+
+				// These two buffers access to the same memory,
+				// so thier layouts are the same.
+				layout (std430, set = 0, binding = 4) buffer BoxTreeUint32
+				{
+					uint box_tree_uint [];
+				};
+
+				layout (std430, set = 0, binding = 4) buffer BoxTreeFloat32
+				{
+					float box_tree_float [];
+				};
+
+
+
+				layout (set = 0, binding = 6) uniform Camera
+				{
+					mat4 matrix;
+					mat4 projection_matrix;
+					mat4 view_matrix;
+				} camera;
+
+
+
+				layout (location = 0) in VertexOut
+				{
+					vec3 position_ndc;
+				};
+
+
+
+				layout (location = 0) out vec4 fragment_color;
+
+
+
+				struct Ray
+				{
+					vec3 origin;
+					vec3 direction;
+				};
+
+
+
+				void setRayFromPixel (out Ray ray, vec2 pixel_coord)
+				{
+					ray.origin = camera.matrix[3].xyz;
+
+					ray.direction.xy = pixel_coord;
+					ray.direction.z = 0.5f;
+
+					ray.direction = (camera.matrix * inverse(camera.projection_matrix) * vec4(ray.direction, 1.0)).xyz;
+					ray.direction = normalize(ray.direction - ray.origin);
+				}
+
+
+
+				bool testRayBoxIntersection (Ray ray, vec3 box_min, vec3 box_max)
+				{
+					float tmin = (box_min[0] - ray.origin[0]) / ray.direction[0];
+					float tmax = (box_max[0] - ray.origin[0]) / ray.direction[0];
+
+					if (tmin > tmax)
+					{
+						float _tmp = tmin;
+						tmin = tmax;
+						tmax = _tmp;
+					}
+
+					float tymin = (box_min[1] - ray.origin[1]) / ray.direction[1];
+					float tymax = (box_max[1] - ray.origin[1]) / ray.direction[1];
+
+					if (tymin > tymax)
+					{
+						float _tmp = tymin;
+						tymin = tymax;
+						tymax = _tmp;
+					}
+
+					if ((tmin > tymax) || (tymin > tmax))
+					{
+						return false;
+					}
+
+					if (tymin > tmin)
+					{
+						tmin = tymin;
+					}
+
+					if (tymax < tmax)
+					{
+						tmax = tymax;
+					}
+
+					float tzmin = (box_min[2] - ray.origin[2]) / ray.direction[2];
+					float tzmax = (box_max[2] - ray.origin[2]) / ray.direction[2];
+
+					if (tzmin > tzmax)
+					{
+						float _tmp = tzmin;
+						tzmin = tzmax;
+						tzmax = _tmp;
+					}
+
+					if ((tmin > tzmax) || (tzmin > tmax))
+					{
+						return false;
+					}
+
+					if (tzmin > tmin)
+					{
+						tmin = tzmin;
+					}
+
+					if (tzmax < tmax)
+					{
+						tmax = tzmax;
+					}
+
+					if (tmin > 1000 || tmax <= 0)
+					{
+						return false;
+					}
+
+					return true;
+				}
+
+
+
+				bool getRayBoxIntersection (Ray ray, vec3 box_min, vec3 box_max, out vec3 intersection)
+				{
+					float tmin = (box_min[0] - ray.origin[0]) / ray.direction[0];
+					float tmax = (box_max[0] - ray.origin[0]) / ray.direction[0];
+
+					if (tmin > tmax)
+					{
+						float _tmp = tmin;
+						tmin = tmax;
+						tmax = _tmp;
+					}
+
+					float tymin = (box_min[1] - ray.origin[1]) / ray.direction[1];
+					float tymax = (box_max[1] - ray.origin[1]) / ray.direction[1];
+
+					if (tymin > tymax)
+					{
+						float _tmp = tymin;
+						tymin = tymax;
+						tymax = _tmp;
+					}
+
+					if ((tmin > tymax) || (tymin > tmax))
+					{
+						return false;
+					}
+
+					if (tymin > tmin)
+					{
+						tmin = tymin;
+					}
+
+					if (tymax < tmax)
+					{
+						tmax = tymax;
+					}
+
+					float tzmin = (box_min[2] - ray.origin[2]) / ray.direction[2];
+					float tzmax = (box_max[2] - ray.origin[2]) / ray.direction[2];
+
+					if (tzmin > tzmax)
+					{
+						float _tmp = tzmin;
+						tzmin = tzmax;
+						tzmax = _tmp;
+					}
+
+					if ((tmin > tzmax) || (tzmin > tmax))
+					{
+						return false;
+					}
+
+					if (tzmin > tmin)
+					{
+						tmin = tzmin;
+					}
+
+					if (tzmax < tmax)
+					{
+						tmax = tzmax;
+					}
+
+					if (tmin > 1000 || tmax <= 0)
+					{
+						return false;
+					}
+
+					intersection = ray.direction;
+					intersection *= ((tmin >= 0) ? tmin : tmax);
+					intersection += ray.origin;
+
+					return true;
+				}
+
+
+
+				vec3 _v1, _v2, _v3, _v4, _normal;
+
+				bool getRayTriangleIntersection (Ray ray, vec3 a, vec3 b, vec3 c, bool backfaceCulling, out vec3 intersection)
+				{
+					// Compute the offset origin, edges, and normal.
+
+					// from
+					// https://github.com/pmjoniak/GeometricTools/blob/master/GTEngine/Include/Mathematics/GteIntrRay3Triangle3.h
+
+					_v1 = b - a;
+					_v2 = c - a;
+					_normal = cross(_v1, _v2);
+
+					// Solve Q + t*D = b1*E1 + b2*E2 (Q = kDiff, D = ray direction,
+					// E1 = kEdge1, E2 = kEdge2, N = Cross(E1,E2)) by
+					//   |Dot(D,N)|*b1 = sign(Dot(D,N))*Dot(D,Cross(Q,E2))
+					//   |Dot(D,N)|*b2 = sign(Dot(D,N))*Dot(D,Cross(E1,Q))
+					//   |Dot(D,N)|*t = -sign(Dot(D,N))*Dot(Q,N)
+
+					float DdN = dot(ray.direction, _normal);
+
+					float sign = 0.0f;
+
+					if (DdN > 0)
+					{
+						if (backfaceCulling)
+						{
+							return false;
+						}
+
+						sign = 1.0f;
+					}
+					else if (DdN < 0)
+					{
+						sign = -1.0f;
+
+						DdN = -DdN;
+					}
+					else
+					{
+						return false;
+					}
+
+					_v3 = ray.origin - a;
+					_v4 = cross(_v3, _v2);
+
+					float DdQxE2 = sign * dot(ray.direction, _v4);
+
+					// b1 < 0, no intersection
+					if (DdQxE2 < 0)
+					{
+						return false;
+					}
+
+					_v4 = cross(_v1, _v3);
+
+					float DdE1xQ = sign * dot(ray.direction, _v4);
+
+					// b2 < 0, no intersection
+					if (DdE1xQ < 0)
+					{
+						return false;
+					}
+
+					// b1 + b2 > 1, no intersection
+					if (DdQxE2 + DdE1xQ > DdN)
+					{
+						return false;
+					}
+
+					// Line intersects triangle, check if ray does.
+					float QdN = -sign * dot(_v3, _normal);
+
+					// t < 0, no intersection
+					if (QdN < 0)
+					{
+						return false;
+					}
+
+					intersection = ray.direction;
+					intersection *= QdN / DdN;
+					intersection += ray.origin;
+
+					return true;
+				}
+
+
+
+				vec3 intersection_box, intersection, p1, p2, p3;
+				float nearest_ray_triangle_intersection;
+
+				void search2 (Ray, uint);
+
+				void search1 (Ray ray, uint box_offset)
+				{
+					// Or use uintBitsToFloat
+					vec3 box_min =
+						vec3
+						(
+							box_tree_float[box_offset],
+							box_tree_float[box_offset + 1],
+							box_tree_float[box_offset + 2]
+						);
+
+					vec3 box_max =
+						vec3
+						(
+							box_tree_float[box_offset + 4],
+							box_tree_float[box_offset + 5],
+							box_tree_float[box_offset + 6]
+						);
+
+					// If box intersection is farther then stored nearest triangle intersection
+					// then do nothing
+					if
+					(
+						getRayBoxIntersection(ray, box_min, box_max, intersection_box) &&
+						distance(ray.origin, intersection_box) < nearest_ray_triangle_intersection
+					)
+					// if (testRayBoxIntersection(ray, box_min, box_max))
+					{
+						uint box_count = box_tree_uint[box_offset + 8];
+
+						if (box_count == 0)
+						{
+							uint triangle_count = box_tree_uint[box_offset + 9];
+
+							for (uint i = 0; i < triangle_count; ++i)
+							{
+								uint triangle_index = box_tree_uint[box_offset + 10 + i];
+
+								uint triangle_first_point_index = triangle_index * 3;
+
+								uint vertex1_index = scene_index_data[triangle_first_point_index];
+								uint vertex2_index = scene_index_data[triangle_first_point_index + 1];
+								uint vertex3_index = scene_index_data[triangle_first_point_index + 2];
+
+								uint vertex1_x_coord_index = vertex1_index * 3;
+								uint vertex2_x_coord_index = vertex2_index * 3;
+								uint vertex3_x_coord_index = vertex3_index * 3;
+
+								p1 =
+									vec3
+									(
+										scene_position_data[vertex1_x_coord_index],
+										scene_position_data[vertex1_x_coord_index + 1],
+										scene_position_data[vertex1_x_coord_index + 2]
+									);
+
+								p2 =
+									vec3
+									(
+										scene_position_data[vertex2_x_coord_index],
+										scene_position_data[vertex2_x_coord_index + 1],
+										scene_position_data[vertex2_x_coord_index + 2]
+									);
+
+								p3 =
+									vec3
+									(
+										scene_position_data[vertex3_x_coord_index],
+										scene_position_data[vertex3_x_coord_index + 1],
+										scene_position_data[vertex3_x_coord_index + 2]
+									);
+
+								if (!getRayTriangleIntersection(ray, p1, p2, p3, false, intersection))
+								{
+									continue;
+								}
+
+								float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+								if
+								(
+									ray_origin_to_intersection_distance < nearest_ray_triangle_intersection &&
+									ray_origin_to_intersection_distance > 0.001
+								)
+								{
+									nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+									// tri_index = triangle_index;
+								}
+							}
+
+							return;
+						}
+
+						for (uint i = 0; i < box_count; ++i)
+						{
+							uint _box_offset = box_tree_uint[box_offset + 9 + i];
+
+							search2(ray, _box_offset);
+						}
+					}
+				}
+
+				void search2 (Ray ray, uint box_offset)
+				{
+					// Or use uintBitsToFloat
+					vec3 box_min =
+						vec3
+						(
+							box_tree_float[box_offset],
+							box_tree_float[box_offset + 1],
+							box_tree_float[box_offset + 2]
+						);
+
+					vec3 box_max =
+						vec3
+						(
+							box_tree_float[box_offset + 4],
+							box_tree_float[box_offset + 5],
+							box_tree_float[box_offset + 6]
+						);
+
+					// If box intersection is farther then stored nearest triangle intersection
+					// then do nothing
+					if
+					(
+						getRayBoxIntersection(ray, box_min, box_max, intersection_box) &&
+						distance(ray.origin, intersection_box) < nearest_ray_triangle_intersection
+					)
+					// if (testRayBoxIntersection(ray, box_min, box_max))
+					{
+						uint box_count = box_tree_uint[box_offset + 8];
+
+						if (box_count == 0)
+						{
+							uint triangle_count = box_tree_uint[box_offset + 9];
+
+							for (uint i = 0; i < triangle_count; ++i)
+							{
+								uint triangle_index = box_tree_uint[box_offset + 10 + i];
+
+								uint triangle_first_point_index = triangle_index * 3;
+
+								uint vertex1_index = scene_index_data[triangle_first_point_index];
+								uint vertex2_index = scene_index_data[triangle_first_point_index + 1];
+								uint vertex3_index = scene_index_data[triangle_first_point_index + 2];
+
+								uint vertex1_x_coord_index = vertex1_index * 3;
+								uint vertex2_x_coord_index = vertex2_index * 3;
+								uint vertex3_x_coord_index = vertex3_index * 3;
+
+								p1 =
+									vec3
+									(
+										scene_position_data[vertex1_x_coord_index],
+										scene_position_data[vertex1_x_coord_index + 1],
+										scene_position_data[vertex1_x_coord_index + 2]
+									);
+
+								p2 =
+									vec3
+									(
+										scene_position_data[vertex2_x_coord_index],
+										scene_position_data[vertex2_x_coord_index + 1],
+										scene_position_data[vertex2_x_coord_index + 2]
+									);
+
+								p3 =
+									vec3
+									(
+										scene_position_data[vertex3_x_coord_index],
+										scene_position_data[vertex3_x_coord_index + 1],
+										scene_position_data[vertex3_x_coord_index + 2]
+									);
+
+								if (!getRayTriangleIntersection(ray, p1, p2, p3, false, intersection))
+								{
+									continue;
+								}
+
+								float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+								if
+								(
+									ray_origin_to_intersection_distance < nearest_ray_triangle_intersection &&
+									ray_origin_to_intersection_distance > 0.001
+								)
+								{
+									nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+									// tri_index = triangle_index;
+								}
+							}
+
+							return;
+						}
+
+						for (uint i = 0; i < box_count; ++i)
+						{
+							uint _box_offset = box_tree_uint[box_offset + 9 + i];
+
+							search1(ray, _box_offset);
+						}
+					}
+				}
+
+
+
+				void main (void)
+				{
+					// fragment_color = vec4((gl_FragCoord.xy / vec2(800.0f, 600.0f) - 0.5f) * 2.0f, 0.0f, 1.0f);
+					// fragment_color = vec4(position_ndc.xy, 0.0f, 1.0f);
+
+					Ray ray;
+
+					setRayFromPixel(ray, position_ndc.xy);
+				}
+			)",
+	};
 }
 
 extern "C" void constructRenderityWrappers2 (void)
 {
 	scene->addObject(*_object);
 	scene->addObject(*object2);
+	scene->addObject(*surface_object);
 }
