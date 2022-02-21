@@ -64,7 +64,7 @@ void initOpengl (const bool& offscreen = false)
 	GLuint scene_vertex_buffer {};
 	glGenBuffers(1, &scene_vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, scene_vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, _scene->wrapper->vertex_data.size() * 4, _scene->wrapper->vertex_data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, _scene->wrapper->position_data.size() * 4, _scene->wrapper->position_data.data(), GL_STATIC_DRAW);
 
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);

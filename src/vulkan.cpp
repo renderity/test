@@ -71,7 +71,7 @@ void initVulkan (const bool& offscreen = false, const size_t& physical_device_in
 
 
 
-	VkBuffer vertex_buffer = _renderer->device.Buffer(_scene->wrapper->vertex_data.size() * sizeof(float), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE);
+	VkBuffer vertex_buffer = _renderer->device.Buffer(_scene->wrapper->position_data.size() * sizeof(float), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE);
 
 	VkMemoryRequirements vertex_buffer_mem_reqs { _renderer->device.MemReqs(vertex_buffer) };
 
@@ -81,9 +81,9 @@ void initVulkan (const bool& offscreen = false, const size_t& physical_device_in
 
 	_renderer->device.bindMem(vertex_buffer, vertex_buffer_mem);
 
-	void* vertex_buffer_mem_addr { _renderer->device.mapMem(vertex_buffer_mem, 0, _scene->wrapper->vertex_data.size() * sizeof(float), 0) };
+	void* vertex_buffer_mem_addr { _renderer->device.mapMem(vertex_buffer_mem, 0, _scene->wrapper->position_data.size() * sizeof(float), 0) };
 
-	memcpy(vertex_buffer_mem_addr, _scene->wrapper->vertex_data.data(), _scene->wrapper->vertex_data.size() * sizeof(float));
+	memcpy(vertex_buffer_mem_addr, _scene->wrapper->position_data.data(), _scene->wrapper->position_data.size() * sizeof(float));
 
 	const VkDeviceSize vertex_buffer_offset {};
 
