@@ -478,24 +478,41 @@ extern "C" void constructRenderityWrappers (void)
 
 				layout (std430, set = 0, binding = 0) readonly buffer ScenePositionData
 				{
+					// float scene_position_data [792588 / 4];
 					float scene_position_data [];
 				};
 
 				layout (std430, set = 0, binding = 2) readonly buffer SceneIndexData
 				{
+					// uint scene_index_data [1566720 / 4];
 					uint scene_index_data [];
+				};
+
+				layout (std430, set = 0, binding = 1) readonly buffer SceneTriData
+				{
+					uint triangles_data [];
+				};
+
+				struct Box
+				{
+					vec3 min;
+					vec3 max;
+					uint triangle_start;
+					uint triangle_end;
 				};
 
 				layout (std430, set = 0, binding = 3) readonly buffer BoxTreeUint32
 				{
-					uint box_tree_uint [];
+					// uint box_tree_uint [2048 * 1024];
+					// uint box_tree_uint [];
+					Box boxes [];
 				};
 
 				layout (set = 0, binding = 4) uniform Camera
 				{
 					mat4 matrix;
-					mat4 projection_matrix;
-					mat4 view_matrix;
+					// mat4 projection_matrix;
+					// mat4 view_matrix;
 				} camera;
 
 
@@ -590,158 +607,36 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-				// bool testRayBoxIntersection (Ray ray, vec3 box_min, vec3 box_max)
-				// {
-				// 	float tmin = (box_min[0] - ray.origin[0]) / ray.direction[0];
-				// 	float tmax = (box_max[0] - ray.origin[0]) / ray.direction[0];
-
-				// 	if (tmin > tmax)
-				// 	{
-				// 		float _tmp = tmin;
-				// 		tmin = tmax;
-				// 		tmax = _tmp;
-				// 	}
-
-				// 	float tymin = (box_min[1] - ray.origin[1]) / ray.direction[1];
-				// 	float tymax = (box_max[1] - ray.origin[1]) / ray.direction[1];
-
-				// 	if (tymin > tymax)
-				// 	{
-				// 		float _tmp = tymin;
-				// 		tymin = tymax;
-				// 		tymax = _tmp;
-				// 	}
-
-				// 	if ((tmin > tymax) || (tymin > tmax))
-				// 	{
-				// 		return false;
-				// 	}
-
-				// 	if (tymin > tmin)
-				// 	{
-				// 		tmin = tymin;
-				// 	}
-
-				// 	if (tymax < tmax)
-				// 	{
-				// 		tmax = tymax;
-				// 	}
-
-				// 	float tzmin = (box_min[2] - ray.origin[2]) / ray.direction[2];
-				// 	float tzmax = (box_max[2] - ray.origin[2]) / ray.direction[2];
-
-				// 	if (tzmin > tzmax)
-				// 	{
-				// 		float _tmp = tzmin;
-				// 		tzmin = tzmax;
-				// 		tzmax = _tmp;
-				// 	}
-
-				// 	if ((tmin > tzmax) || (tzmin > tmax))
-				// 	{
-				// 		return false;
-				// 	}
-
-				// 	if (tzmin > tmin)
-				// 	{
-				// 		tmin = tzmin;
-				// 	}
-
-				// 	if (tzmax < tmax)
-				// 	{
-				// 		tmax = tzmax;
-				// 	}
-
-				// 	if (tmin > 1000.0f || tmax <= 0.0f)
-				// 	{
-				// 		return false;
-				// 	}
-
-				// 	return true;
-				// }
-
-
-
 				vec3 intersection_box = ray.origin;
+				vec3 intersection_box_far = ray.origin;
+				vec3 intersection_box_far1 = ray.origin;
 				vec3 intersection = ray.origin;
 
 
 
+				// bool getRayBoxIntersection (Ray ray, vec3 box_min, vec3 box_max)
+				// {
+				// 	vec3 tMin = (box_min - ray.origin) / ray.direction;
+				// 	vec3 tMax = (box_max - ray.origin) / ray.direction;
+				// 	vec3 t1 = min(tMin, tMax);
+				// 	vec3 t2 = max(tMin, tMax);
+				// 	float tNear = max(max(t1.x, t1.y), t1.z);
+				// 	float tFar = min(min(t2.x, t2.y), t2.z);
+
+				// 	if (tNear > tFar)
+				// 	{
+				// 		return false;
+				// 	}
+
+				// 	intersection_box = ray.direction;
+				// 	intersection_box *= tNear;
+				// 	intersection_box += ray.origin;
+
+				// 	return true;
+				// }
+
 				bool getRayBoxIntersection (Ray ray, vec3 box_min, vec3 box_max)
 				{
-					// float tmin = (box_min[0] - ray.origin[0]) / ray.direction[0];
-					// float tmax = (box_max[0] - ray.origin[0]) / ray.direction[0];
-
-					// if (tmin > tmax)
-					// {
-					// 	float _tmp = tmin;
-					// 	tmin = tmax;
-					// 	tmax = _tmp;
-					// }
-
-					// float tymin = (box_min[1] - ray.origin[1]) / ray.direction[1];
-					// float tymax = (box_max[1] - ray.origin[1]) / ray.direction[1];
-
-					// if (tymin > tymax)
-					// {
-					// 	float _tmp = tymin;
-					// 	tymin = tymax;
-					// 	tymax = _tmp;
-					// }
-
-					// if ((tmin > tymax) || (tymin > tmax))
-					// {
-					// 	return false;
-					// }
-
-					// if (tymin > tmin)
-					// {
-					// 	tmin = tymin;
-					// }
-
-					// if (tymax < tmax)
-					// {
-					// 	tmax = tymax;
-					// }
-
-					// float tzmin = (box_min[2] - ray.origin[2]) / ray.direction[2];
-					// float tzmax = (box_max[2] - ray.origin[2]) / ray.direction[2];
-
-					// if (tzmin > tzmax)
-					// {
-					// 	float _tmp = tzmin;
-					// 	tzmin = tzmax;
-					// 	tzmax = _tmp;
-					// }
-
-					// if ((tmin > tzmax) || (tzmin > tmax))
-					// {
-					// 	return false;
-					// }
-
-					// if (tzmin > tmin)
-					// {
-					// 	tmin = tzmin;
-					// }
-
-					// if (tzmax < tmax)
-					// {
-					// 	tmax = tzmax;
-					// }
-
-					// if (tmin > 1000.0f || tmax <= 0.0f)
-					// {
-					// 	return false;
-					// }
-
-					// intersection = ray.direction;
-					// intersection *= ((tmin >= 0.0f) ? tmin : tmax);
-					// intersection += ray.origin;
-
-					// return true;
-
-
-
 					vec3 tMin = (box_min - ray.origin) / ray.direction;
 					vec3 tMax = (box_max - ray.origin) / ray.direction;
 					vec3 t1 = min(tMin, tMax);
@@ -758,298 +653,453 @@ extern "C" void constructRenderityWrappers (void)
 					intersection_box *= tNear;
 					intersection_box += ray.origin;
 
+					intersection_box_far1 = ray.direction;
+					intersection_box_far1 *= tFar;
+					intersection_box_far1 += ray.origin;
+
 					return true;
 				}
 
-
-
-				// vec3 IntersectPlane(Ray ray, vec3 p0, vec3 p1, vec3 p2)
-				// {
-				// 		vec3 D = ray.Direction;
-				// 		vec3 N = cross(p1-p0, p2-p0);
-				// 		vec3 X = ray.Origin + D * dot(p0 - ray.Origin, N) / dot(D, N);
-
-				// 		return X;
-				// }
-
-				// bool IntersectTriangle(Ray ray, vec3 p0, vec3 p1, vec3 p2)
-				// {
-				// 		vec3 X = IntersectPlane(ray, p0, p1, p2);
-				// 		return PointInTriangle(X, p0, p1, p2);
-				// }
-
-				vec3 _v1, _v2, _v3, _v4, _normal;
-
-				bool getRayTriangleIntersection (Ray ray, vec3 a, vec3 b, vec3 c, bool backface_culling)
+				bool getRayBoxIntersection2 (Ray ray, vec3 box_min, vec3 box_max)
 				{
-					// vec3 _v1, _v2, _v3, _v4, _normal;
+					vec3 tMin = (box_min - ray.origin) / ray.direction;
+					vec3 tMax = (box_max - ray.origin) / ray.direction;
+					vec3 t1 = min(tMin, tMax);
+					vec3 t2 = max(tMin, tMax);
+					float tNear = max(max(t1.x, t1.y), t1.z);
+					float tFar = min(min(t2.x, t2.y), t2.z);
 
-					_v1 = b - a;
-					_v2 = c - a;
-					_normal = cross(_v1, _v2);
-
-					float DdN = dot(ray.direction, _normal);
-
-					float sign = 0.0f;
-
-					if (DdN > 0.0f)
-					{
-						if (backface_culling)
-						{
-							return false;
-						}
-
-						sign = 1.0f;
-					}
-					else if (DdN < 0.0f)
-					{
-						sign = -1.0f;
-
-						DdN = -DdN;
-					}
-					else
+					if (tNear > tFar)
 					{
 						return false;
 					}
 
-					_v3 = ray.origin - a;
-					_v4 = cross(_v3, _v2);
+					// intersection_box = ray.direction;
+					// intersection_box *= tNear;
+					// intersection_box += ray.origin;
 
-					float DdQxE2 = sign * dot(ray.direction, _v4);
-
-					// b1 < 0, no intersection
-					if (DdQxE2 < 0.0f)
-					{
-						return false;
-					}
-
-					_v4 = cross(_v1, _v3);
-
-					float DdE1xQ = sign * dot(ray.direction, _v4);
-
-					// b2 < 0, no intersection
-					if (DdE1xQ < 0.0f)
-					{
-						return false;
-					}
-
-					// b1 + b2 > 1, no intersection
-					if (DdQxE2 + DdE1xQ > DdN)
-					{
-						return false;
-					}
-
-					// Line intersects triangle, check if ray does.
-					float QdN = -sign * dot(_v3, _normal);
-
-					// t < 0, no intersection
-					if (QdN < 0.0f)
-					{
-						return false;
-					}
-
-					intersection = ray.direction;
-					intersection *= QdN / DdN;
-					intersection += ray.origin;
+					intersection_box_far = ray.direction;
+					intersection_box_far *= tFar;
+					intersection_box_far += ray.origin;
 
 					return true;
 				}
 
 
 
-				#define BOX_TREE_LEVEL_NUM 8
+				float PointInOrOn(vec3 P1, vec3 P2, vec3 A, vec3 B)
+				{
+					vec3 ab = B - A;
+					vec3 CP1 = cross(ab, P1 - A);
+					vec3 CP2 = cross(ab, P2 - A);
+
+					return step(0.0, dot(CP1, CP2));
+				}
+
+				float getRayTriangleIntersection (Ray ray, vec3 p0, vec3 p1, vec3 p2)
+				{
+					vec3 N = cross(p1 - p0, p2 - p0);
+
+					intersection = ray.origin + ray.direction * dot(p0 - ray.origin, N) / dot(ray.direction, N);
+
+					return
+					(
+						PointInOrOn(intersection, p0, p1, p2) *
+						PointInOrOn(intersection, p1, p2, p0) *
+						PointInOrOn(intersection, p2, p0, p1)
+					);
+				}
+
+
+
+				#define BOX_TREE_LEVEL_NUM 7
 
 
 
 				void main (void)
 				{
-					// Ray ray = getRayFromPixel(position_ndc.xy);
-
-					// Ray ray;
-
-					// float fov = radians(45.0f);
-					// float fx = tan(fov / 2.0f) / 800.0f;
-					// vec2 d = fx * (gl_FragCoord.xy * 2.0f - vec2(800.0f, 600.0f));
-
-					// ray.origin = vec3(0.0f, 0.0f, 50.0f);
-					// ray.origin = camera.view_matrix[3].xyz;
 					ray.origin = camera.matrix[3].xyz;
-					ray.direction = normalize(vec3(d.x, d.y, 1.0));
+
+					mat4 mmm = camera.matrix;
+					mmm[3] = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+					ray.direction = normalize((mmm * vec4(vec3(d.xy, 1.0), 1.0f)).xyz);
 
 
 
-					// vec3 intersection_box = ray.origin;
-					// vec3 intersection = ray.origin;
 					intersection_box = ray.origin;
+					intersection_box_far = ray.origin;
+					intersection_box_far1 = ray.origin;
 					intersection = ray.origin;
 					vec3 p1 = vec3(0.0f);
 					vec3 p2 = vec3(0.0f);
 					vec3 p3 = vec3(0.0f);
+					vec3 min = vec3(-10.0f, -10.0f, -10.0f);
+					vec3 max = vec3(10.0f, 10.0f, 10.0f);
 
 					float nearest_ray_triangle_intersection = 999999.0f;
 
+					const uint dimension_segment_count = 8;
+
+					ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
 
 
-					uint current_level = 0;
-					uint box_sizes [BOX_TREE_LEVEL_NUM + 1];
-					uint box_counters [BOX_TREE_LEVEL_NUM + 1];
-					uint box_offsets [(BOX_TREE_LEVEL_NUM + 1) * 8];
 
-					for (uint i = 0; i < BOX_TREE_LEVEL_NUM + 1; ++i)
+					if (getRayBoxIntersection(ray, min, max))
 					{
-						box_sizes[i] = 0;
-						box_counters[i] = 0;
-					}
 
-					for (uint i = 0; i < (BOX_TREE_LEVEL_NUM + 1) * 8; ++i)
-					{
-						box_offsets[i] = 0;
-					}
+						float size = max.x - min.x;
+						float segment_size = size / float(dimension_segment_count);
 
-					box_sizes[0] = 1;
+						ivec3 xyz = ivec3((intersection_box + (size * 0.5f)) / segment_size);
 
-					uint box_offset = 0;
-
-					for (;;)
-					{
-						++box_counters[current_level];
-
-						vec3 box_min =
-							vec3
-							(
-								uintBitsToFloat(box_tree_uint[box_offset]),
-								uintBitsToFloat(box_tree_uint[box_offset + 1]),
-								uintBitsToFloat(box_tree_uint[box_offset + 2])
-							);
-
-						vec3 box_max =
-							vec3
-							(
-								uintBitsToFloat(box_tree_uint[box_offset + 4]),
-								uintBitsToFloat(box_tree_uint[box_offset + 5]),
-								uintBitsToFloat(box_tree_uint[box_offset + 6])
-							);
-
-						if
-						(
-							getRayBoxIntersection(ray, box_min, box_max) &&
-							distance(ray.origin, intersection_box) < nearest_ray_triangle_intersection
-						)
+						if (xyz.x == -1)
 						{
-							uint box_count = box_tree_uint[box_offset + 8];
+							++xyz.x;
+						}
 
-							if (box_count == 0)
+						if (xyz.y == -1)
+						{
+							++xyz.y;
+						}
+
+						if (xyz.z == -1)
+						{
+							++xyz.z;
+						}
+
+						if (xyz.x == dimension_segment_count)
+						{
+							--xyz.x;
+						}
+
+						if (xyz.y == dimension_segment_count)
+						{
+							--xyz.y;
+						}
+
+						if (xyz.z == dimension_segment_count)
+						{
+							--xyz.z;
+						}
+
+						// uint box_index = int(dot(xyz, dimensions));
+						uint box_index = xyz.x * dimension_segment_count * dimension_segment_count + xyz.y * dimension_segment_count + xyz.z;
+
+						for (uint i = 0; i < 10; ++i)
+						{
+							if (i == 2)
 							{
-								uint triangle_count = box_tree_uint[box_offset + 9];
+								fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-								for (uint i = 0; i < triangle_count; ++i)
+								return;
+							}
+
+							Box box = boxes[box_index];
+
+							uint qwe = 0;
+
+							for (; box.triangle_start < box.triangle_end; ++box.triangle_start)
+							{
+								uint triangle_index = triangles_data[box.triangle_start];
+
+								uint triangle_first_point_index = triangle_index * 3;
+
+								uint vertex1_index = scene_index_data[triangle_first_point_index];
+								uint vertex2_index = scene_index_data[triangle_first_point_index + 1];
+								uint vertex3_index = scene_index_data[triangle_first_point_index + 2];
+
+								uint vertex1_x_coord_index = vertex1_index * 3;
+								uint vertex2_x_coord_index = vertex2_index * 3;
+								uint vertex3_x_coord_index = vertex3_index * 3;
+
+								p1 =
+									vec3
+									(
+										scene_position_data[vertex1_x_coord_index],
+										scene_position_data[vertex1_x_coord_index + 1],
+										scene_position_data[vertex1_x_coord_index + 2]
+									);
+
+								p2 =
+									vec3
+									(
+										scene_position_data[vertex2_x_coord_index],
+										scene_position_data[vertex2_x_coord_index + 1],
+										scene_position_data[vertex2_x_coord_index + 2]
+									);
+
+								p3 =
+									vec3
+									(
+										scene_position_data[vertex3_x_coord_index],
+										scene_position_data[vertex3_x_coord_index + 1],
+										scene_position_data[vertex3_x_coord_index + 2]
+									);
+
+
+
+								if (getRayTriangleIntersection(ray, p1, p2, p3) == 1.0f)
 								{
-									uint triangle_index = box_tree_uint[box_offset + 10 + i];
+									++qwe;
 
-									// uint triangle_first_point_index = triangle_index * 3;
+									// float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
 
-									// uint vertex1_index = scene_index_data[triangle_first_point_index];
-									// uint vertex2_index = scene_index_data[triangle_first_point_index + 1];
-									// uint vertex3_index = scene_index_data[triangle_first_point_index + 2];
-
-									uint vertex1_index = scene_index_data[triangle_index];
-									uint vertex2_index = scene_index_data[triangle_index + 1];
-									uint vertex3_index = scene_index_data[triangle_index + 2];
-
-									uint vertex1_x_coord_index = vertex1_index * 3;
-									uint vertex2_x_coord_index = vertex2_index * 3;
-									uint vertex3_x_coord_index = vertex3_index * 3;
-
-									p1 =
-										vec3
-										(
-											scene_position_data[vertex1_x_coord_index],
-											scene_position_data[vertex1_x_coord_index + 1],
-											scene_position_data[vertex1_x_coord_index + 2]
-										);
-
-									p2 =
-										vec3
-										(
-											scene_position_data[vertex2_x_coord_index],
-											scene_position_data[vertex2_x_coord_index + 1],
-											scene_position_data[vertex2_x_coord_index + 2]
-										);
-
-									p3 =
-										vec3
-										(
-											scene_position_data[vertex3_x_coord_index],
-											scene_position_data[vertex3_x_coord_index + 1],
-											scene_position_data[vertex3_x_coord_index + 2]
-										);
-
-									if (getRayTriangleIntersection(ray, p1, p2, p3, true))
-									{
-										float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
-
-										if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection && ray_origin_to_intersection_distance > 0.001f)
-										{
-											nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
-										}
-									}
+									// if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection && ray_origin_to_intersection_distance > 0.001f)
+									// {
+									// 	nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+									// }
 								}
 							}
 
-							if (box_counters[current_level] > box_sizes[current_level])
+							if (qwe > 0)
 							{
-								--current_level;
+								fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 
-								if (current_level == 0)
-								{
-									break;
-								}
-							}
-							else
-							{
-								++current_level;
-
-								for (uint i = 0; i < box_count; ++i)
-								{
-									box_offsets[(current_level * 8) + i] = box_tree_uint[box_offset + 9 + i];
-								}
-
-								box_sizes[current_level] = box_count;
-								box_counters[current_level] = 0;
+								return;
 							}
 
-							box_offset = box_offsets[(current_level * 8) + box_counters[current_level]];
+							getRayBoxIntersection2(ray, box.min, box.max);
 
-							continue;
-						}
-
-						if (current_level == 0)
-						{
-							break;
-						}
-
-						if (box_counters[current_level] > box_sizes[current_level])
-						{
-							--current_level;
-
-							// Remove ?
-							if (current_level == 0)
+							// If current box far intersection equals bounding box intersection,
+							// it means that there is no triangle intersected.
+							if (distance(intersection_box_far, intersection_box_far1) < 0.000001f)
 							{
-								break;
+								// fragment_color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+								return;
 							}
+
+							// xyz = ivec3((intersection_box + (size * 0.5f)) / segment_size);
+
+							vec3 aa = abs(intersection_box_far - box.min);
+							vec3 bb = abs(intersection_box_far - box.max);
+
+							if (aa.x < 0.000001f)
+							{
+								--xyz.x;
+							}
+							else if (bb.x < 0.000001f)
+							{
+								++xyz.x;
+							}
+
+							if (aa.y < 0.000001f)
+							{
+								--xyz.y;
+							}
+							else if (bb.y < 0.000001f)
+							{
+								++xyz.y;
+							}
+
+							if (aa.z < 0.000001f)
+							{
+								--xyz.z;
+							}
+							else if (bb.z < 0.000001f)
+							{
+								++xyz.z;
+							}
+
+							if (xyz.x == -1)
+							{
+								++xyz.x;
+							}
+
+							if (xyz.y == -1)
+							{
+								++xyz.y;
+							}
+
+							if (xyz.z == -1)
+							{
+								++xyz.z;
+							}
+
+							if (xyz.x == dimension_segment_count)
+							{
+								--xyz.x;
+							}
+
+							if (xyz.y == dimension_segment_count)
+							{
+								--xyz.y;
+							}
+
+							if (xyz.z == dimension_segment_count)
+							{
+								--xyz.z;
+							}
+
+							// next box index
+							// box_index = int(dot(xyz, dimensions));
+							box_index = xyz.x * dimension_segment_count * dimension_segment_count + xyz.y * dimension_segment_count + xyz.z;
 						}
-
-						box_offset = box_offsets[(current_level * 8) + box_counters[current_level]];
 					}
 
-					if (nearest_ray_triangle_intersection < 999998.0f)
-					{
-						fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-					}
-					else
-					{
-						fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-					}
+
+
+					// uint qwe = 0;
+
+					// uint current_level = 0;
+					// uint box_sizes [BOX_TREE_LEVEL_NUM + 1];
+					// uint box_counters [BOX_TREE_LEVEL_NUM + 1];
+					// uint box_offsets [(BOX_TREE_LEVEL_NUM + 1) * 8];
+
+					// for (uint i = 0; i < BOX_TREE_LEVEL_NUM + 1; ++i)
+					// {
+					// 	box_sizes[i] = 0;
+					// 	box_counters[i] = 0;
+					// }
+
+					// for (uint i = 0; i < (BOX_TREE_LEVEL_NUM + 1) * 8; ++i)
+					// {
+					// 	box_offsets[i] = 0;
+					// }
+
+					// box_sizes[0] = 1;
+
+					// uint box_offset = 0;
+
+					// for (;;)
+					// {
+					// 	++box_counters[current_level];
+
+					// 	vec3 box_min =
+					// 		vec3
+					// 		(
+					// 			uintBitsToFloat(box_tree_uint[box_offset]),
+					// 			uintBitsToFloat(box_tree_uint[box_offset + 1]),
+					// 			uintBitsToFloat(box_tree_uint[box_offset + 2])
+					// 		);
+
+					// 	vec3 box_max =
+					// 		vec3
+					// 		(
+					// 			uintBitsToFloat(box_tree_uint[box_offset + 4]),
+					// 			uintBitsToFloat(box_tree_uint[box_offset + 5]),
+					// 			uintBitsToFloat(box_tree_uint[box_offset + 6])
+					// 		);
+
+					// 	if
+					// 	(
+					// 		getRayBoxIntersection(ray, box_min, box_max) &&
+					// 		distance(ray.origin, intersection_box) < nearest_ray_triangle_intersection
+					// 	)
+					// 	{
+					// 		uint box_count = box_tree_uint[box_offset + 8];
+
+					// 		if (box_count == 0)
+					// 		{
+					// 			uint triangle_count = box_tree_uint[box_offset + 9];
+
+					// 			for (uint i = 0; i < triangle_count; ++i)
+					// 			{
+					// 				uint triangle_first_point_index = box_tree_uint[box_offset + 10 + i];
+
+					// 				uint vertex1_index = scene_index_data[triangle_first_point_index];
+					// 				uint vertex2_index = scene_index_data[triangle_first_point_index + 1];
+					// 				uint vertex3_index = scene_index_data[triangle_first_point_index + 2];
+
+					// 				uint vertex1_x_coord_index = vertex1_index * 3;
+					// 				uint vertex2_x_coord_index = vertex2_index * 3;
+					// 				uint vertex3_x_coord_index = vertex3_index * 3;
+
+					// 				p1 =
+					// 					vec3
+					// 					(
+					// 						scene_position_data[vertex1_x_coord_index],
+					// 						scene_position_data[vertex1_x_coord_index + 1],
+					// 						scene_position_data[vertex1_x_coord_index + 2]
+					// 					);
+
+					// 				p2 =
+					// 					vec3
+					// 					(
+					// 						scene_position_data[vertex2_x_coord_index],
+					// 						scene_position_data[vertex2_x_coord_index + 1],
+					// 						scene_position_data[vertex2_x_coord_index + 2]
+					// 					);
+
+					// 				p3 =
+					// 					vec3
+					// 					(
+					// 						scene_position_data[vertex3_x_coord_index],
+					// 						scene_position_data[vertex3_x_coord_index + 1],
+					// 						scene_position_data[vertex3_x_coord_index + 2]
+					// 					);
+
+					// 				if (getRayTriangleIntersection(ray, p1, p2, p3) == 1.0f)
+					// 				// if (floatBitsToUint(getRayTriangleIntersection(ray, p1, p2, p3)) != 0)
+					// 				{
+					// 					float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+					// 					if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection && ray_origin_to_intersection_distance > 0.001f)
+					// 					{
+					// 						nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+					// 					}
+					// 				}
+					// 			}
+					// 		}
+
+					// 		if (box_counters[current_level] > box_sizes[current_level])
+					// 		{
+					// 			--current_level;
+
+					// 			if (current_level == 0)
+					// 			{
+					// 				break;
+					// 			}
+					// 		}
+					// 		else
+					// 		{
+					// 			++current_level;
+
+					// 			for (uint i = 0; i < box_count; ++i)
+					// 			{
+					// 				box_offsets[(current_level * 8) + i] = box_tree_uint[box_offset + 9 + i];
+					// 			}
+
+					// 			box_sizes[current_level] = box_count;
+					// 			box_counters[current_level] = 0;
+					// 		}
+
+					// 		box_offset = box_offsets[(current_level * 8) + box_counters[current_level]];
+
+					// 		continue;
+					// 	}
+
+					// 	if (current_level == 0)
+					// 	{
+					// 		fragment_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+					// 		return;
+					// 	}
+
+					// 	if (box_counters[current_level] > box_sizes[current_level])
+					// 	{
+					// 		--current_level;
+
+					// 		// Remove ?
+					// 		if (current_level == 0)
+					// 		{
+					// 			break;
+					// 		}
+					// 	}
+
+					// 	box_offset = box_offsets[(current_level * 8) + box_counters[current_level]];
+					// }
+
+					// if (nearest_ray_triangle_intersection < 999.0f)
+					// {
+					// 	// fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					// 	fragment_color = vec4(normalize(intersection), 1.0f);
+					// }
+					// else
+					// {
+					// 	fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// }
 				}
 			)",
 	};
