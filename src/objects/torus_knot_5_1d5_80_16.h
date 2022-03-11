@@ -19,8 +19,6 @@
 #include "renderity/wrappers/src/object/object.h"
 #include "renderity/wrappers/src/scene/scene.h"
 
-#include "renderity/test/src/objects/sphere_10_64_64.h"
-
 
 
 #ifdef __wasm__
@@ -37,10 +35,6 @@
 	#define LOG(x) std::cout << x << std::endl;
 	#define LOGF(x) std::cout << x << std::endl;
 #endif
-
-
-
-const Sphere_10_64_64 sphere_10_64_64;
 
 
 
@@ -790,19 +784,6 @@ extern "C" void constructRenderityWrappers (void)
 
 extern "C" void constructRenderityWrappers2 (void)
 {
-	scene->addObject(*_object);
-	// scene->addObject(*object2);
-	// scene->addObject(*surface_object);
-}
-
-extern "C" void constructRenderityWrappers3 (void)
-{
-	_object->position_data.resize(sizeof(sphere_10_64_64.position_data) / 4);
-	memcpy(_object->position_data.data(), sphere_10_64_64.position_data, sizeof(sphere_10_64_64.position_data));
-
-	_object->index_data.resize(sizeof(sphere_10_64_64.index_data) / 4);
-	memcpy(_object->index_data.data(), sphere_10_64_64.index_data, sizeof(sphere_10_64_64.index_data));
-
 	scene->addObject(*_object);
 	// scene->addObject(*object2);
 	// scene->addObject(*surface_object);
