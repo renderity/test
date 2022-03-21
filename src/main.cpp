@@ -184,6 +184,64 @@ extern "C" void constructRenderityWrappers (void)
 
 	scene = new RDTY::WRAPPERS::Scene;
 
+
+
+	RDTY::WRAPPERS::Uniform* projection_matrix_uniform
+	{ new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit->projection_matrix), .name = "projection_matrix", .block_index = offsetof(RDTY::MATH::Orbit, projection_matrix), .size = sizeof(orbit->projection_matrix) } };
+
+	RDTY::WRAPPERS::Uniform* view_matrix_uniform
+	{ new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit->view_matrix), .name = "view_matrix", .block_index = offsetof(RDTY::MATH::Orbit, view_matrix), .size = sizeof(orbit->view_matrix) } };
+
+
+
+	uniform_block0 =
+		new RDTY::WRAPPERS::UniformBlock
+		{
+			.binding = 0,
+			.name = "Camera",
+
+			.uniforms =
+			{
+				projection_matrix_uniform,
+				view_matrix_uniform,
+			},
+		};
+
+	uniform_block1 =
+		new RDTY::WRAPPERS::UniformBlock
+		{
+			.binding = 1,
+			.name = "Camera2",
+
+			.uniforms =
+			{
+				new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit2->view_matrix), .block_index = 0, .size = sizeof(float) },
+			},
+		};
+
+
+
+	desc_set1 =
+		new RDTY::WRAPPERS::DescriptorSet
+		{
+			.bindings =
+			{
+				uniform_block0,
+			},
+		};
+
+	desc_set2 =
+		new RDTY::WRAPPERS::DescriptorSet
+		{
+			.bindings =
+			{
+				uniform_block0,
+				uniform_block1,
+			},
+		};
+
+
+
 	material = new RDTY::WRAPPERS::Material
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
@@ -218,6 +276,22 @@ extern "C" void constructRenderityWrappers (void)
 					return output;
 				}
 			)",
+
+		.uniforms =
+		{
+			projection_matrix_uniform,
+			view_matrix_uniform,
+		},
+
+		.uniform_blocks =
+		{
+			uniform_block0,
+		},
+
+		.descriptor_sets =
+		{
+			desc_set1,
+		},
 	};
 
 	material2 = new RDTY::WRAPPERS::Material
@@ -328,21 +402,23 @@ extern "C" void constructRenderityWrappers (void)
 					return vec4<f32>(1.0, 0.0, 1.0, 1.0);
 				}
 			)",
+
+		.uniforms =
+		{
+			projection_matrix_uniform,
+			view_matrix_uniform,
+		},
+
+		.uniform_blocks =
+		{
+			uniform_block0,
+		},
+
+		.descriptor_sets =
+		{
+			desc_set2,
+		},
 	};
-
-	uniform_block0 =
-		new RDTY::WRAPPERS::UniformBlock
-		{
-			.binding = 0,
-			.name = "Camera",
-		};
-
-	uniform_block1 =
-		new RDTY::WRAPPERS::UniformBlock
-		{
-			.binding = 1,
-			.name = "Camera2",
-		};
 
 	_object = new RDTY::WRAPPERS::Object;
 	object2 = new RDTY::WRAPPERS::Object;
@@ -370,67 +446,25 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-
-	RDTY::WRAPPERS::Uniform* projection_matrix_uniform
-	{ new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit->projection_matrix), .name = "projection_matrix", .block_index = offsetof(RDTY::MATH::Orbit, projection_matrix), .size = sizeof(orbit->projection_matrix) } };
-
-	RDTY::WRAPPERS::Uniform* view_matrix_uniform
-	{ new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit->view_matrix), .name = "view_matrix", .block_index = offsetof(RDTY::MATH::Orbit, view_matrix), .size = sizeof(orbit->view_matrix) } };
-
-	material->injectUniform(projection_matrix_uniform);
-	material->injectUniform(view_matrix_uniform);
-
-	material2->injectUniform(projection_matrix_uniform);
-	material2->injectUniform(view_matrix_uniform);
-
-	uniform_block0->injectUniform(projection_matrix_uniform);
-	uniform_block0->injectUniform(view_matrix_uniform);
-
-	uniform_block1->injectUniform(new RDTY::WRAPPERS::Uniform { .object_addr = &(orbit2->view_matrix), .block_index = 0, .size = sizeof(float) });
-
-	material->injectUniformBlock(uniform_block0);
-	material2->injectUniformBlock(uniform_block0);
-
-
-
-	desc_set1 = new RDTY::WRAPPERS::DescriptorSet;
-	desc_set2 = new RDTY::WRAPPERS::DescriptorSet;
-
-	desc_set1->bindings.push_back(uniform_block0);
-
-	desc_set2->bindings.push_back(uniform_block0);
-	desc_set2->bindings.push_back(uniform_block1);
-
-	material->descriptor_sets.push_back(desc_set1);
-	material2->descriptor_sets.push_back(desc_set2);
-
-
-
 	surface_uniform_block_camera =
 		new RDTY::WRAPPERS::UniformBlock
 		{
 			.binding = 4,
 			.name = "Camera",
 			.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT},
+
+			.uniforms =
+			{
+				new RDTY::WRAPPERS::Uniform
+				{ .object_addr = &(orbit->object.mat), .block_index = 0, .size = 64 },
+
+				new RDTY::WRAPPERS::Uniform
+				{ .object_addr = &(orbit->projection_matrix), .block_index = 64, .size = 64 },
+
+				new RDTY::WRAPPERS::Uniform
+				{ .object_addr = &(orbit->view_matrix), .block_index = 128, .size = 64 },
+			},
 		};
-
-	surface_uniform_block_camera->injectUniform
-	(
-		new RDTY::WRAPPERS::Uniform
-		{ .object_addr = &(orbit->object.mat), .block_index = 0, .size = 64 }
-	);
-
-	surface_uniform_block_camera->injectUniform
-	(
-		new RDTY::WRAPPERS::Uniform
-		{ .object_addr = &(orbit->projection_matrix), .block_index = 64, .size = 64 }
-	);
-
-	surface_uniform_block_camera->injectUniform
-	(
-		new RDTY::WRAPPERS::Uniform
-		{ .object_addr = &(orbit->view_matrix), .block_index = 128, .size = 64 }
-	);
 
 
 
