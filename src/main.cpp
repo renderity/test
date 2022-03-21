@@ -188,7 +188,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.wgsl_code_vertex =
+		.code_wgsl_vertex =
 			R"(
 				struct VertexIn
 				{
@@ -226,7 +226,7 @@ extern "C" void constructRenderityWrappers (void)
 
 		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::FALSE,
 
-		.glsl100es_code_fragment =
+		.code_glsl100es_fragment =
 			R"(
 				precision highp int;
 				precision highp float;
@@ -237,7 +237,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.glsl300es_code_fragment =
+		.code_glsl300es_fragment =
 			R"(
 				#version 300 es
 
@@ -252,7 +252,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.glsl_vulkan_code_vertex =
+		.code_glsl_vertex =
 			R"(
 				#version 460
 
@@ -287,7 +287,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.glsl_vulkan_code_fragment =
+		.code_glsl_fragment =
 			R"(
 				#version 460
 
@@ -321,7 +321,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.wgsl_code_fragment =
+		.code_wgsl_fragment =
 			R"(
 				[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32>
 				{
@@ -411,6 +411,7 @@ extern "C" void constructRenderityWrappers (void)
 		{
 			.binding = 4,
 			.name = "Camera",
+			.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT},
 		};
 
 	surface_uniform_block_camera->injectUniform
@@ -444,7 +445,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.glsl_vulkan_code_vertex =
+		.code_glsl_vertex =
 			R"(
 				#version 460
 
@@ -470,7 +471,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.glsl_vulkan_code_fragment =
+		.code_glsl_fragment =
 			R"(
 				#version 460
 
@@ -478,6 +479,14 @@ extern "C" void constructRenderityWrappers (void)
 
 				precision highp int;
 				precision highp float;
+
+
+
+				#ifdef VULKAN
+					#define SET(_set) set = _set,
+				#else
+					#define SET(_set)
+				#endif
 
 
 
@@ -495,7 +504,7 @@ extern "C" void constructRenderityWrappers (void)
 					uint padding;
 				};
 
-				layout (std430, set = 0, binding = 0) readonly buffer ScenePositionData
+				layout (SET(0) binding = 0, std430) readonly buffer ScenePositionData
 				{
 					Position scene_position_data [];
 				};
@@ -506,12 +515,12 @@ extern "C" void constructRenderityWrappers (void)
 					uint padding;
 				};
 
-				layout (std430, set = 0, binding = 2) readonly buffer SceneIndexData
+				layout (SET(0) binding = 2, std430) readonly buffer SceneIndexData
 				{
 					Triangle scene_index_data [];
 				};
 
-				layout (std430, set = 0, binding = 1) readonly buffer SceneTriData
+				layout (SET(0) binding = 1, std430) readonly buffer SceneTriData
 				{
 					uint triangles_data [];
 				};
@@ -524,12 +533,12 @@ extern "C" void constructRenderityWrappers (void)
 					uint triangle_end;
 				};
 
-				layout (std430, set = 0, binding = 3) readonly buffer BoxTreeUint32
+				layout (SET(0) binding = 3, std430) readonly buffer BoxTreeUint32
 				{
 					Box boxes [];
 				};
 
-				layout (set = 0, binding = 4) uniform Camera
+				layout (SET(0) binding = 4) uniform Camera
 				{
 					mat4 matrix;
 					// mat4 projection_matrix;
@@ -622,10 +631,11 @@ extern "C" void constructRenderityWrappers (void)
 					vec3 CP1 = cross(ab, P1 - A);
 					vec3 CP2 = cross(ab, P2 - A);
 
-					return step(0.0, dot(CP1, CP2));
+					return step(0.0f, dot(CP1, CP2));
 				}
 
-				float getIntersectionRayTriangle (Ray ray, vec3 p0, vec3 p1, vec3 p2)
+				// float getIntersectionRayTriangle (Ray ray, vec3 p0, vec3 p1, vec3 p2)
+				float getIntersectionRayTriangle (vec3 p0, vec3 p1, vec3 p2)
 				{
 					vec3 N = cross(p1 - p0, p2 - p0);
 
@@ -701,7 +711,8 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-								if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
+								// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
+								if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
 								{
 									++intersected_triangle_count;
 
@@ -783,6 +794,142 @@ extern "C" void constructRenderityWrappers (void)
 					{
 						fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 					}
+
+
+
+					// uint next_bounding_box_index = 0;
+
+					// for (;;)
+					// {
+					// 	Box bounding_box = boxes[next_bounding_box_index];
+
+					// 	uint dimension_segment_count = bounding_box.triangle_start;
+
+					// 	ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
+
+
+
+					// 	if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
+					// 	{
+					// 		float size = bounding_box.max.x - bounding_box.min.x;
+					// 		float segment_size = size / dimension_segment_count;
+
+					// 		ivec3 xyz = clamp(ivec3((intersection_box + (size * 0.5f)) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
+
+					// 		// TODO: use custom udot function?
+					// 		uint box_index = uint(dot(xyz, dimensions)) + 1;
+
+					// 		for (uint i = 0; i < dimension_segment_count * 4; ++i)
+					// 		{
+					// 			Box box = boxes[box_index];
+
+					// 			uint intersected_triangle_count = 0;
+
+					// 			for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
+					// 			{
+					// 				uint triangle_index = triangles_data[t_start];
+
+					// 				uvec3 vertex_indices = scene_index_data[triangle_index].index;
+
+					// 				p1 = scene_position_data[vertex_indices.x].position;
+					// 				p2 = scene_position_data[vertex_indices.y].position;
+					// 				p3 = scene_position_data[vertex_indices.z].position;
+
+
+
+					// 				// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
+					// 				if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
+					// 				{
+					// 					++intersected_triangle_count;
+
+					// 					float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+					// 					if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection)
+					// 					{
+					// 						nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+
+					// 						_intersection = intersection;
+					// 					}
+
+					// 					// nearest_ray_triangle_intersection =
+					// 					// 	step(ray_origin_to_intersection_distance, nearest_ray_triangle_intersection) * ray_origin_to_intersection_distance;
+
+					// 					// fragment_color = vec4(normalize(intersection), 1.0f);
+
+					// 					// return;
+
+					// 					// _intersection = intersection;
+					// 					// break;
+					// 				}
+
+					// 				intersection = _intersection;
+					// 			}
+
+					// 			if (intersected_triangle_count > 0)
+					// 			{
+					// 				_intersection = intersection;
+
+					// 				fragment_color = vec4(normalize(_intersection), 1.0f);
+					// 				return;
+
+					// 				// break;
+					// 			}
+
+					// 			// if (!getIntersectionRayBoxFar(ray, box.min, box.max))
+					// 			// {
+					// 			// 	fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					// 			// 	return;
+					// 			// }
+					// 			getIntersectionRayBoxFar(ray, box.min, box.max);
+
+					// 			// If current box far intersection equals bounding box intersection,
+					// 			// it means that there is no triangle intersected.
+					// 			if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
+					// 			{
+					// 				// YELLOW
+					// 				// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+					// 				fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// 				return;
+					// 				break;
+					// 			}
+
+					// 			vec3 aa = abs(intersection_box_far - box.min);
+					// 			vec3 bb = abs(intersection_box_far - box.max);
+
+					// 			xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
+
+
+
+					// 			// next box index
+					// 			box_index = uint(dot(xyz, dimensions)) + 1;
+					// 		}
+
+					// 		if (nearest_ray_triangle_intersection < 999998.0f)
+					// 		{
+					// 			fragment_color = vec4(normalize(_intersection), 1.0f);
+					// 		}
+					// 		// PINK
+					// 		else
+					// 		{
+					// 			// fragment_color = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+					// 			fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// 		}
+					// 	}
+					// 	// BLACK
+					// 	else
+					// 	{
+					// 		fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// 	}
+
+
+
+					// 	next_bounding_box_index = bounding_box.triangle_end;
+
+					// 	if (next_boudning_box_index == 0)
+					// 	{
+					// 		break;
+					// 	}
+					// }
 				}
 			)",
 	};
@@ -790,6 +937,8 @@ extern "C" void constructRenderityWrappers (void)
 
 extern "C" void constructRenderityWrappers2 (void)
 {
+	_object->makeBoundingBox();
+
 	scene->addObject(*_object);
 	// scene->addObject(*object2);
 	// scene->addObject(*surface_object);
@@ -802,6 +951,8 @@ extern "C" void constructRenderityWrappers3 (void)
 
 	_object->index_data.resize(sizeof(sphere_10_64_64.index_data) / 4);
 	memcpy(_object->index_data.data(), sphere_10_64_64.index_data, sizeof(sphere_10_64_64.index_data));
+
+	_object->makeBoundingBox();
 
 	scene->addObject(*_object);
 	// scene->addObject(*object2);
