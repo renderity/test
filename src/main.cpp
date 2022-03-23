@@ -423,7 +423,7 @@ extern "C" void constructRenderityWrappers (void)
 	_object = new RDTY::WRAPPERS::Object;
 	object2 = new RDTY::WRAPPERS::Object;
 
-	memcpy(object2->position_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f }).data(), 36);
+	// memcpy(object2->position_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f }).data(), 36);
 
 	// scene->addObject(*_object);
 	// scene->addObject(*object2);
@@ -709,286 +709,265 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-					Box bounding_box = boxes[0];
+					// Box bounding_box = boxes[0];
 
-					uint dimension_segment_count = bounding_box.triangle_start;
+					// uint dimension_segment_count = bounding_box.triangle_start;
 
-					ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
-
-
-
-					if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
-					{
-						float size = bounding_box.max.x - bounding_box.min.x;
-						float segment_size = size / dimension_segment_count;
-
-						ivec3 xyz = clamp(ivec3((intersection_box + (size * 0.5f)) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
-
-						// TODO: use custom udot function?
-						uint box_index = uint(dot(xyz, dimensions)) + 1;
-
-						for (uint i = 0; i < dimension_segment_count * 4; ++i)
-						{
-							Box box = boxes[box_index];
-
-							uint intersected_triangle_count = 0;
-
-							for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
-							{
-								uint triangle_index = triangles_data[t_start];
-
-								uvec3 vertex_indices = scene_index_data[triangle_index].index;
-
-								p1 = scene_position_data[vertex_indices.x].position;
-								p2 = scene_position_data[vertex_indices.y].position;
-								p3 = scene_position_data[vertex_indices.z].position;
+					// ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
 
 
 
-								// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
-								if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
-								{
-									++intersected_triangle_count;
-
-									float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
-
-									if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection)
-									{
-										nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
-
-										_intersection = intersection;
-									}
-
-									// nearest_ray_triangle_intersection =
-									// 	step(ray_origin_to_intersection_distance, nearest_ray_triangle_intersection) * ray_origin_to_intersection_distance;
-
-									// fragment_color = vec4(normalize(intersection), 1.0f);
-
-									// return;
-
-									// _intersection = intersection;
-									// break;
-								}
-
-								intersection = _intersection;
-							}
-
-							if (intersected_triangle_count > 0)
-							{
-								_intersection = intersection;
-
-								fragment_color = vec4(normalize(_intersection), 1.0f);
-								return;
-
-								// break;
-							}
-
-							// if (!getIntersectionRayBoxFar(ray, box.min, box.max))
-							// {
-							// 	fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-							// 	return;
-							// }
-							getIntersectionRayBoxFar(ray, box.min, box.max);
-
-							// If current box far intersection equals bounding box intersection,
-							// it means that there is no triangle intersected.
-							if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
-							{
-								// YELLOW
-								// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-								return;
-								break;
-							}
-
-							vec3 aa = abs(intersection_box_far - box.min);
-							vec3 bb = abs(intersection_box_far - box.max);
-
-							xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
-
-
-
-							// next box index
-							box_index = uint(dot(xyz, dimensions)) + 1;
-						}
-
-						if (nearest_ray_triangle_intersection < 999998.0f)
-						{
-							fragment_color = vec4(normalize(_intersection), 1.0f);
-						}
-						// PINK
-						else
-						{
-							// fragment_color = vec4(1.0f, 0.0f, 1.0f, 1.0f);
-							fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-						}
-					}
-					// BLACK
-					else
-					{
-						fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-					}
-
-
-
-					// uint next_bounding_box_index = 0;
-
-					// for (;;)
+					// if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
 					// {
-					// 	Box bounding_box = boxes[next_bounding_box_index];
+					// 	float size = bounding_box.max.x - bounding_box.min.x;
+					// 	float segment_size = size / dimension_segment_count;
 
-					// 	uint dimension_segment_count = bounding_box.triangle_start;
+					// 	ivec3 xyz = clamp(ivec3((intersection_box - bounding_box.min) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
 
-					// 	ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
+					// 	// TODO: use custom udot function?
+					// 	uint box_index = uint(dot(xyz, dimensions)) + 1;
 
-
-
-					// 	if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
+					// 	for (uint i = 0; i < dimension_segment_count * 4; ++i)
 					// 	{
-					// 		float size = bounding_box.max.x - bounding_box.min.x;
-					// 		float segment_size = size / dimension_segment_count;
+					// 		Box box = boxes[box_index];
 
-					// 		ivec3 xyz = clamp(ivec3((intersection_box + (size * 0.5f)) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
+					// 		uint intersected_triangle_count = 0;
 
-					// 		// TODO: use custom udot function?
-					// 		uint box_index = uint(dot(xyz, dimensions)) + 1;
-
-					// 		for (uint i = 0; i < dimension_segment_count * 4; ++i)
+					// 		for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
 					// 		{
-					// 			Box box = boxes[box_index];
+					// 			uint triangle_index = triangles_data[t_start];
 
-					// 			uint intersected_triangle_count = 0;
+					// 			uvec3 vertex_indices = scene_index_data[triangle_index].index;
 
-					// 			for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
+					// 			p1 = scene_position_data[vertex_indices.x].position;
+					// 			p2 = scene_position_data[vertex_indices.y].position;
+					// 			p3 = scene_position_data[vertex_indices.z].position;
+
+
+
+					// 			// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
+					// 			if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
 					// 			{
-					// 				uint triangle_index = triangles_data[t_start];
+					// 				++intersected_triangle_count;
 
-					// 				uvec3 vertex_indices = scene_index_data[triangle_index].index;
+					// 				float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
 
-					// 				p1 = scene_position_data[vertex_indices.x].position;
-					// 				p2 = scene_position_data[vertex_indices.y].position;
-					// 				p3 = scene_position_data[vertex_indices.z].position;
-
-
-
-					// 				// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
-					// 				if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
+					// 				if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection)
 					// 				{
-					// 					++intersected_triangle_count;
+					// 					nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
 
-					// 					float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
-
-					// 					if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection)
-					// 					{
-					// 						nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
-
-					// 						_intersection = intersection;
-					// 					}
-
-					// 					// nearest_ray_triangle_intersection =
-					// 					// 	step(ray_origin_to_intersection_distance, nearest_ray_triangle_intersection) * ray_origin_to_intersection_distance;
-
-					// 					// fragment_color = vec4(normalize(intersection), 1.0f);
-
-					// 					// return;
-
-					// 					// _intersection = intersection;
-					// 					// break;
+					// 					_intersection = intersection;
 					// 				}
 
-					// 				intersection = _intersection;
-					// 			}
+					// 				// nearest_ray_triangle_intersection =
+					// 				// 	step(ray_origin_to_intersection_distance, nearest_ray_triangle_intersection) * ray_origin_to_intersection_distance;
 
-					// 			if (intersected_triangle_count > 0)
-					// 			{
-					// 				_intersection = intersection;
+					// 				// fragment_color = vec4(normalize(intersection), 1.0f);
 
-					// 				fragment_color = vec4(normalize(_intersection), 1.0f);
-					// 				return;
+					// 				// return;
 
+					// 				// _intersection = intersection;
 					// 				// break;
 					// 			}
 
-					// 			// if (!getIntersectionRayBoxFar(ray, box.min, box.max))
-					// 			// {
-					// 			// 	fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-					// 			// 	return;
-					// 			// }
-					// 			getIntersectionRayBoxFar(ray, box.min, box.max);
-
-					// 			// If current box far intersection equals bounding box intersection,
-					// 			// it means that there is no triangle intersected.
-					// 			if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
-					// 			{
-					// 				// YELLOW
-					// 				// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-					// 				fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-					// 				return;
-					// 				break;
-					// 			}
-
-					// 			vec3 aa = abs(intersection_box_far - box.min);
-					// 			vec3 bb = abs(intersection_box_far - box.max);
-
-					// 			xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
-
-
-
-					// 			// next box index
-					// 			box_index = uint(dot(xyz, dimensions)) + 1;
+					// 			intersection = _intersection;
 					// 		}
 
-					// 		if (nearest_ray_triangle_intersection < 999998.0f)
+					// 		if (intersected_triangle_count > 0)
 					// 		{
+					// 			_intersection = intersection;
+
 					// 			fragment_color = vec4(normalize(_intersection), 1.0f);
+					// 			return;
+
+					// 			// break;
 					// 		}
-					// 		// PINK
-					// 		else
+
+					// 		// if (!getIntersectionRayBoxFar(ray, box.min, box.max))
+					// 		// {
+					// 		// 	fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					// 		// 	return;
+					// 		// }
+					// 		getIntersectionRayBoxFar(ray, box.min, box.max);
+
+					// 		// If current box far intersection equals bounding box intersection,
+					// 		// it means that there is no triangle intersected.
+					// 		if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
 					// 		{
-					// 			// fragment_color = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+					// 			// YELLOW
+					// 			// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 					// 			fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// 			return;
+					// 			break;
 					// 		}
+
+					// 		vec3 aa = abs(intersection_box_far - box.min);
+					// 		vec3 bb = abs(intersection_box_far - box.max);
+
+					// 		xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
+
+
+
+					// 		// next box index
+					// 		box_index = uint(dot(xyz, dimensions)) + 1;
 					// 	}
-					// 	// BLACK
+
+					// 	if (nearest_ray_triangle_intersection < 999998.0f)
+					// 	{
+					// 		fragment_color = vec4(normalize(_intersection), 1.0f);
+					// 	}
+					// 	// PINK
 					// 	else
 					// 	{
+					// 		// fragment_color = vec4(1.0f, 0.0f, 1.0f, 1.0f);
 					// 		fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 					// 	}
-
-
-
-					// 	next_bounding_box_index = bounding_box.triangle_end;
-
-					// 	if (next_boudning_box_index == 0)
-					// 	{
-					// 		break;
-					// 	}
 					// }
+					// // BLACK
+					// else
+					// {
+					// 	fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					// }
+
+
+
+					uint next_bounding_box_index = 0;
+
+					for (;;)
+					{
+						Box bounding_box = boxes[next_bounding_box_index];
+
+						uint dimension_segment_count = bounding_box.triangle_start;
+
+						ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
+
+
+
+						if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
+						{
+							float size = bounding_box.max.x - bounding_box.min.x;
+							float segment_size = size / dimension_segment_count;
+
+							ivec3 xyz = clamp(ivec3((intersection_box - bounding_box.min) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
+
+							// TODO: use custom udot function?
+							uint box_index = uint(dot(xyz, dimensions)) + 1;
+
+							for (uint i = 0; i < dimension_segment_count * 4; ++i)
+							{
+								Box box = boxes[box_index];
+
+								uint intersected_triangle_count = 0;
+
+								for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
+								{
+									uint triangle_index = triangles_data[t_start];
+
+									uvec3 vertex_indices = scene_index_data[triangle_index].index;
+
+									p1 = scene_position_data[vertex_indices.x].position;
+									p2 = scene_position_data[vertex_indices.y].position;
+									p3 = scene_position_data[vertex_indices.z].position;
+
+
+
+									// if (getIntersectionRayTriangle(ray, p1, p2, p3) == 1.0f)
+									if (getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
+									{
+										++intersected_triangle_count;
+
+										float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+										if (ray_origin_to_intersection_distance < nearest_ray_triangle_intersection)
+										{
+											nearest_ray_triangle_intersection = ray_origin_to_intersection_distance;
+
+											_intersection = intersection;
+										}
+									}
+
+									intersection = _intersection;
+								}
+
+								if (intersected_triangle_count > 0)
+								{
+									_intersection = intersection;
+
+									fragment_color = vec4(normalize(_intersection), 1.0f);
+
+									return;
+								}
+
+								getIntersectionRayBoxFar(ray, box.min, box.max);
+
+								// If current box far intersection equals bounding box intersection,
+								// it means that there is no triangle intersected.
+								if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
+								{
+									// YELLOW
+									// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+									fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+									break;
+								}
+
+								vec3 aa = abs(intersection_box_far - box.min);
+								vec3 bb = abs(intersection_box_far - box.max);
+
+								xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
+
+
+
+								// next box index
+								box_index = uint(dot(xyz, dimensions)) + 1;
+							}
+
+							if (nearest_ray_triangle_intersection < 999998.0f)
+							{
+								fragment_color = vec4(normalize(_intersection), 1.0f);
+							}
+							// PINK
+							else
+							{
+								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+							}
+						}
+						// BLACK
+						else
+						{
+							fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+						}
+
+
+
+						next_bounding_box_index = bounding_box.triangle_end;
+
+						if (next_bounding_box_index == 0)
+						{
+							break;
+						}
+					}
 				}
 			)",
 	};
 }
 
-extern "C" void constructRenderityWrappers2 (void)
-{
-	_object->makeBoundingBox();
-
-	scene->addObject(*_object);
-	// scene->addObject(*object2);
-	// scene->addObject(*surface_object);
-}
-
-extern "C" void constructRenderityWrappers3 (void)
+extern "C" void updateObjectsData (void)
 {
 	_object->position_data.resize(sizeof(sphere_10_64_64.position_data) / 4);
 	memcpy(_object->position_data.data(), sphere_10_64_64.position_data, sizeof(sphere_10_64_64.position_data));
 
 	_object->index_data.resize(sizeof(sphere_10_64_64.index_data) / 4);
 	memcpy(_object->index_data.data(), sphere_10_64_64.index_data, sizeof(sphere_10_64_64.index_data));
+}
 
+extern "C" void constructRenderityWrappers2 (void)
+{
 	_object->makeBoundingBox();
+	object2->makeBoundingBox();
 
-	scene->addObject(*_object);
-	// scene->addObject(*object2);
+	scene->addObjects({ _object, object2 });
 	// scene->addObject(*surface_object);
+
+	scene->test();
 }
