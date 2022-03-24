@@ -837,6 +837,8 @@ extern "C" void constructRenderityWrappers (void)
 					{
 						Box bounding_box = boxes[next_bounding_box_index];
 
+						next_bounding_box_index = bounding_box.triangle_end;
+
 						uint dimension_segment_count = bounding_box.triangle_start;
 
 						ivec3 dimensions = ivec3(dimension_segment_count * dimension_segment_count, dimension_segment_count, 1);
@@ -891,11 +893,20 @@ extern "C" void constructRenderityWrappers (void)
 
 								if (intersected_triangle_count > 0)
 								{
-									_intersection = intersection;
+									// _intersection = intersection;
 
-									fragment_color = vec4(normalize(_intersection), 1.0f);
+									if (next_bounding_box_index == 0)
+									{
+										break;
+									}
+									else
+									{
+										continue;
+									}
 
-									return;
+									// fragment_color = vec4(normalize(_intersection), 1.0f);
+
+									// return;
 								}
 
 								getIntersectionRayBoxFar(ray, box.min, box.max);
@@ -904,11 +915,16 @@ extern "C" void constructRenderityWrappers (void)
 								// it means that there is no triangle intersected.
 								if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
 								{
-									// YELLOW
-									// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 									fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-									break;
+									if (next_bounding_box_index == 0)
+									{
+										break;
+									}
+									else
+									{
+										continue;
+									}
 								}
 
 								vec3 aa = abs(intersection_box_far - box.min);
@@ -921,31 +937,25 @@ extern "C" void constructRenderityWrappers (void)
 								// next box index
 								box_index = uint(dot(xyz, dimensions)) + 1;
 							}
-
-							if (nearest_ray_triangle_intersection < 999998.0f)
-							{
-								fragment_color = vec4(normalize(_intersection), 1.0f);
-							}
-							// PINK
-							else
-							{
-								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-							}
-						}
-						// BLACK
-						else
-						{
-							fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 						}
 
 
-
-						next_bounding_box_index = bounding_box.triangle_end;
 
 						if (next_bounding_box_index == 0)
 						{
 							break;
 						}
+					}
+
+
+
+					if (nearest_ray_triangle_intersection < 999998.0f)
+					{
+						fragment_color = vec4(normalize(_intersection), 1.0f);
+					}
+					else
+					{
+						fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 					}
 				}
 			)",
