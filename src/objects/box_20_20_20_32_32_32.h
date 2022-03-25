@@ -182,7 +182,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.code_wgsl_vertex =
+		.code_vertex_wgsl =
 			R"(
 				struct VertexIn
 				{
@@ -220,7 +220,7 @@ extern "C" void constructRenderityWrappers (void)
 
 		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::FALSE,
 
-		.code_glsl100es_fragment =
+		.code_fragment_glsl100es =
 			R"(
 				precision highp int;
 				precision highp float;
@@ -231,7 +231,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl300es_fragment =
+		.code_fragment_glsl300es =
 			R"(
 				#version 300 es
 
@@ -246,7 +246,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl_vertex =
+		.code_vertex_glsl =
 			R"(
 				#version 460
 
@@ -281,7 +281,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl_fragment =
+		.code_fragment_glsl =
 			R"(
 				#version 460
 
@@ -315,7 +315,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_wgsl_fragment =
+		.code_fragment_wgsl =
 			R"(
 				[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32>
 				{
@@ -438,7 +438,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.code_glsl_vertex =
+		.code_vertex_glsl =
 			R"(
 				#version 460
 
@@ -464,7 +464,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl_fragment =
+		.code_fragment_glsl =
 			R"(
 				#version 460
 

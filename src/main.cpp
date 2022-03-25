@@ -246,7 +246,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.code_wgsl_vertex =
+		.code_vertex_wgsl =
 			R"(
 				struct VertexIn
 				{
@@ -300,33 +300,7 @@ extern "C" void constructRenderityWrappers (void)
 
 		.blend_enabled = RDTY::WRAPPERS::MATERIAL::BlendEnabled::FALSE,
 
-		.code_glsl100es_fragment =
-			R"(
-				precision highp int;
-				precision highp float;
-
-				void main (void)
-				{
-					gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-				}
-			)",
-
-		.code_glsl300es_fragment =
-			R"(
-				#version 300 es
-
-				precision highp int;
-				precision highp float;
-
-				layout (location = 0) out vec4 fragment_color;
-
-				void main (void)
-				{
-					fragment_color = vec4(0.0, 1.0, 0.0, 1.0);
-				}
-			)",
-
-		.code_glsl_vertex =
+		.code_vertex_glsl =
 			R"(
 				#version 460
 
@@ -361,7 +335,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl_fragment =
+		.code_fragment_glsl =
 			R"(
 				#version 460
 
@@ -395,7 +369,33 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_wgsl_fragment =
+		.code_fragment_glsl100es =
+			R"(
+				precision highp int;
+				precision highp float;
+
+				void main (void)
+				{
+					gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+				}
+			)",
+
+		.code_fragment_glsl300es =
+			R"(
+				#version 300 es
+
+				precision highp int;
+				precision highp float;
+
+				layout (location = 0) out vec4 fragment_color;
+
+				void main (void)
+				{
+					fragment_color = vec4(0.0, 1.0, 0.0, 1.0);
+				}
+			)",
+
+		.code_fragment_wgsl =
 			R"(
 				[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32>
 				{
@@ -479,7 +479,7 @@ extern "C" void constructRenderityWrappers (void)
 	{
 		.topology = RDTY::WRAPPERS::MATERIAL::Topology::TRIANGLES,
 
-		.code_glsl_vertex =
+		.code_vertex_glsl =
 			R"(
 				#version 460
 
@@ -505,7 +505,7 @@ extern "C" void constructRenderityWrappers (void)
 				}
 			)",
 
-		.code_glsl_fragment =
+		.code_fragment_glsl =
 			R"(
 				#version 460
 
@@ -831,7 +831,7 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-					uint next_bounding_box_index = 0;
+					uint next_bounding_box_index = 4097;
 
 					for (;;)
 					{
@@ -893,20 +893,7 @@ extern "C" void constructRenderityWrappers (void)
 
 								if (intersected_triangle_count > 0)
 								{
-									// _intersection = intersection;
-
-									if (next_bounding_box_index == 0)
-									{
-										break;
-									}
-									else
-									{
-										continue;
-									}
-
-									// fragment_color = vec4(normalize(_intersection), 1.0f);
-
-									// return;
+									break;
 								}
 
 								getIntersectionRayBoxFar(ray, box.min, box.max);
@@ -915,16 +902,7 @@ extern "C" void constructRenderityWrappers (void)
 								// it means that there is no triangle intersected.
 								if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
 								{
-									fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-									if (next_bounding_box_index == 0)
-									{
-										break;
-									}
-									else
-									{
-										continue;
-									}
+									break;
 								}
 
 								vec3 aa = abs(intersection_box_far - box.min);
@@ -952,11 +930,13 @@ extern "C" void constructRenderityWrappers (void)
 					if (nearest_ray_triangle_intersection < 999998.0f)
 					{
 						fragment_color = vec4(normalize(_intersection), 1.0f);
+
+						return;
 					}
-					else
-					{
-						fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-					}
+
+
+
+					fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 				}
 			)",
 	};
