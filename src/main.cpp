@@ -831,11 +831,13 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-					uint next_bounding_box_index = 4097;
+					uint next_bounding_box_index = 0;
 
 					for (;;)
 					{
 						Box bounding_box = boxes[next_bounding_box_index];
+
+						uint bounding_box_index = next_bounding_box_index;
 
 						next_bounding_box_index = bounding_box.triangle_end;
 
@@ -853,7 +855,7 @@ extern "C" void constructRenderityWrappers (void)
 							ivec3 xyz = clamp(ivec3((intersection_box - bounding_box.min) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
 
 							// TODO: use custom udot function?
-							uint box_index = uint(dot(xyz, dimensions)) + 1;
+							uint box_index = bounding_box_index + uint(dot(xyz, dimensions)) + 1;
 
 							for (uint i = 0; i < dimension_segment_count * 4; ++i)
 							{
@@ -913,7 +915,7 @@ extern "C" void constructRenderityWrappers (void)
 
 
 								// next box index
-								box_index = uint(dot(xyz, dimensions)) + 1;
+								box_index = bounding_box_index + uint(dot(xyz, dimensions)) + 1;
 							}
 						}
 
