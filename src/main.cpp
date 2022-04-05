@@ -479,8 +479,9 @@ extern "C" void constructRenderityWrappers (void)
 
 	surface_object = new RDTY::WRAPPERS::Object;
 
+	surface_object->position_data.resize(9);
+	surface_object->normal_data.resize(9);
 	memcpy(surface_object->position_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, -1.0f, 3.0f, 0.0f, 3.0f, -1.0f, 0.0f }).data(), 36);
-	// memcpy(surface_object->index_data.data(), std::vector({ 0, 1, 2 }).data(), 12);
 
 
 
@@ -541,21 +542,15 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-				struct Position
-				{
-					vec3 position;
-					uint padding;
-				};
-
 				layout (SET(0) binding = 0, std430) readonly buffer ScenePositionData
 				{
-					Position scene_position_data [];
+					vec3 scene_position_data [];
 				};
 
-				// struct Triangle
-				// {
-				// 	uvec3 index;
-				// };
+				layout (SET(0) binding = 5, std430) readonly buffer SceneNormalData
+				{
+					vec3 scene_normal_data [];
+				};
 
 				// layout (SET(0) binding = 2, std430) readonly buffer SceneIndexData
 				// {
@@ -618,10 +613,10 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-				bool getIntersectionRayBox (Ray ray, vec3 box_min, vec3 box_max)
+				bool getIntersectionRayBox (Ray _ray, vec3 box_min, vec3 box_max)
 				{
-					vec3 tMin = (box_min - ray.origin) / ray.direction;
-					vec3 tMax = (box_max - ray.origin) / ray.direction;
+					vec3 tMin = (box_min - _ray.origin) / _ray.direction;
+					vec3 tMax = (box_max - _ray.origin) / _ray.direction;
 					vec3 t1 = min(tMin, tMax);
 					vec3 t2 = max(tMin, tMax);
 					float tNear = max(max(t1.x, t1.y), t1.z);
@@ -632,22 +627,22 @@ extern "C" void constructRenderityWrappers (void)
 						return false;
 					}
 
-					intersection_box = ray.direction;
+					intersection_box = _ray.direction;
 					intersection_box *= tNear;
-					intersection_box += ray.origin;
+					intersection_box += _ray.origin;
 
-					intersection_box_far1 = ray.direction;
+					intersection_box_far1 = _ray.direction;
 					intersection_box_far1 *= tFar;
-					intersection_box_far1 += ray.origin;
+					intersection_box_far1 += _ray.origin;
 
 					return true;
 				}
 
-				// bool getIntersectionRayBoxFar (Ray ray, vec3 box_min, vec3 box_max)
-				void getIntersectionRayBoxFar (Ray ray, vec3 box_min, vec3 box_max)
+				// bool getIntersectionRayBoxFar (Ray _ray, vec3 box_min, vec3 box_max)
+				void getIntersectionRayBoxFar (Ray _ray, vec3 box_min, vec3 box_max)
 				{
-					vec3 tMin = (box_min - ray.origin) / ray.direction;
-					vec3 tMax = (box_max - ray.origin) / ray.direction;
+					vec3 tMin = (box_min - _ray.origin) / _ray.direction;
+					vec3 tMax = (box_max - _ray.origin) / _ray.direction;
 					vec3 t1 = min(tMin, tMax);
 					vec3 t2 = max(tMin, tMax);
 					float tNear = max(max(t1.x, t1.y), t1.z);
@@ -659,9 +654,9 @@ extern "C" void constructRenderityWrappers (void)
 					// 	return false;
 					// }
 
-					intersection_box_far = ray.direction;
+					intersection_box_far = _ray.direction;
 					intersection_box_far *= tFar;
-					intersection_box_far += ray.origin;
+					intersection_box_far += _ray.origin;
 
 					// return true;
 				}
@@ -692,6 +687,20 @@ extern "C" void constructRenderityWrappers (void)
 					);
 				}
 
+				float getIntersectionRayTriangle2 (Ray _ray, vec3 p0, vec3 p1, vec3 p2)
+				{
+					vec3 N = cross(p1 - p0, p2 - p0);
+
+					intersection = _ray.origin + _ray.direction * dot(p0 - _ray.origin, N) / dot(_ray.direction, N);
+
+					return
+					(
+						PointInOrOn(intersection, p0, p1, p2) *
+						PointInOrOn(intersection, p1, p2, p0) *
+						PointInOrOn(intersection, p2, p0, p1)
+					);
+				}
+
 
 
 				vec3 getBarycentricCoords(vec3 p, vec3 a, vec3 b, vec3 c)
@@ -712,16 +721,27 @@ extern "C" void constructRenderityWrappers (void)
 					float w = (d00 * d21 - d01 * d20) / denom;
 					float u = 1.0f - v - w;
 
-					return vec3(v, w, u);
+					return vec3(u, v, w);
 				}
 
 				struct Intersection
 				{
 					vec3 point;
-					// uvec3 vertex_indices;
+					uvec3 vertex_indices;
 					vec3 barycentric;
 					float distance;
+					uint bounding_box_index;
 				};
+
+				bool testPointInsideBox (vec3 point, vec3 min, vec3 max)
+				{
+					return
+					(
+						point.x <= max.x && point.x >= min.x &&
+						point.y <= max.y && point.y >= min.y &&
+						point.z <= max.z && point.z >= min.z
+					);
+				}
 
 
 
@@ -753,6 +773,8 @@ extern "C" void constructRenderityWrappers (void)
 					vec3 p2 = vec3(0.0f);
 					vec3 p3 = vec3(0.0f);
 
+					uvec3 vi;
+
 					uint next_bounding_box_index = 0;
 
 					for (;;)
@@ -769,7 +791,81 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-						if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
+						if (testPointInsideBox(ray.origin, bounding_box.min, bounding_box.max))
+						{
+							// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+							// return;
+
+							float size = bounding_box.max.x - bounding_box.min.x;
+							float segment_size = size / dimension_segment_count;
+
+							ivec3 xyz = clamp(ivec3((ray.origin - bounding_box.min) / segment_size), ivec3(0), ivec3(dimension_segment_count - 1));
+
+							uint box_index = bounding_box_index + uint(dot(xyz, dimensions)) + 1;
+
+							for (uint i = 0; i < dimension_segment_count * 4; ++i)
+							{
+								Box box = boxes[box_index];
+
+								uint intersected_triangle_count = 0;
+
+								for (uint t_start = box.triangle_start; t_start < box.triangle_end; ++t_start)
+								{
+									uvec3 vertex_indices = triangles_data[t_start];
+
+									p1 = scene_position_data[vertex_indices.x];
+									p2 = scene_position_data[vertex_indices.y];
+									p3 = scene_position_data[vertex_indices.z];
+
+
+
+									if (vi != vertex_indices && getIntersectionRayTriangle(p1, p2, p3) == 1.0f)
+									{
+										++intersected_triangle_count;
+
+										float ray_origin_to_intersection_distance = distance(ray.origin, intersection);
+
+										if (ray_origin_to_intersection_distance < _intersection.distance)
+										{
+											_intersection.distance = ray_origin_to_intersection_distance;
+											_intersection.point = intersection;
+											_intersection.vertex_indices = vertex_indices;
+											_intersection.bounding_box_index = bounding_box_index;
+											_intersection.barycentric = getBarycentricCoords(_intersection.point, p1, p2, p3);
+										}
+									}
+
+									intersection = _intersection.point;
+								}
+
+								if (intersected_triangle_count > 0)
+								{
+									break;
+								}
+
+								Ray rrr = ray;
+
+								rrr.origin -= ray.direction * 100.0f;
+
+								getIntersectionRayBox(rrr, bounding_box.min, bounding_box.max);
+								getIntersectionRayBoxFar(rrr, box.min, box.max);
+
+								if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
+								{
+									break;
+								}
+
+								vec3 aa = abs(intersection_box_far - box.min);
+								vec3 bb = abs(intersection_box_far - box.max);
+
+								xyz += ivec3((step(0.00001f, aa) - step(0.00001f, bb)));
+
+
+
+								box_index = bounding_box_index + uint(dot(xyz, dimensions)) + 1;
+							}
+						}
+						else if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
 						{
 							float size = bounding_box.max.x - bounding_box.min.x;
 							float segment_size = size / dimension_segment_count;
@@ -793,9 +889,9 @@ extern "C" void constructRenderityWrappers (void)
 
 									uvec3 vertex_indices = triangles_data[t_start];
 
-									p1 = scene_position_data[vertex_indices.x].position;
-									p2 = scene_position_data[vertex_indices.y].position;
-									p3 = scene_position_data[vertex_indices.z].position;
+									p1 = scene_position_data[vertex_indices.x];
+									p2 = scene_position_data[vertex_indices.y];
+									p3 = scene_position_data[vertex_indices.z];
 
 
 
@@ -810,7 +906,8 @@ extern "C" void constructRenderityWrappers (void)
 										{
 											_intersection.distance = ray_origin_to_intersection_distance;
 											_intersection.point = intersection;
-
+											_intersection.vertex_indices = vertex_indices;
+											_intersection.bounding_box_index = bounding_box_index;
 											_intersection.barycentric = getBarycentricCoords(_intersection.point, p1, p2, p3);
 										}
 									}
@@ -848,45 +945,78 @@ extern "C" void constructRenderityWrappers (void)
 
 						if (next_bounding_box_index == 0)
 						{
-							if (bounce_count == 0)
+							if (bounce_count == 1)
 							{
 								if (_intersection.distance < 999998.0f)
 								{
-									fragment_color = vec4(normalize(_intersection.point), 1.0f);
+									fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+									// vec3 n3 = scene_normal_data[_intersection.vertex_indices.x];
+									// vec3 n1 = scene_normal_data[_intersection.vertex_indices.y];
+									// vec3 n2 = scene_normal_data[_intersection.vertex_indices.z];
+
+									// vec3 normal = ((n1 * _intersection.barycentric.x) + (n2 * _intersection.barycentric.y) + (n3 * _intersection.barycentric.z));
+
+									// // vec3 normal = normalize(n1 + n2 + n3);
+
+									// float diffuse = dot(normal, normalize(vec3(1.0f, 1.0f, 1.0f)));
+
+									// fragment_color = vec4(vec3(diffuse), 1.0f);
 
 									return;
 								}
 
-								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+								fragment_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+								// fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 								return;
 							}
 
-							++bounce_count;
+							if (_intersection.distance < 999998.0f)
+							{
+								++bounce_count;
 
 
 
-							vec3 normal = vec3(1.0f, 0.0f, 0.0f);
+								vec3 n1 = scene_normal_data[_intersection.vertex_indices.x];
+								vec3 n2 = scene_normal_data[_intersection.vertex_indices.y];
+								vec3 n3 = scene_normal_data[_intersection.vertex_indices.z];
 
-							ray.origin = _intersection.point;
+								// vec3 normal = vec3(1.0f, 0.0f, 0.0f);
+								// vec3 normal = (n1 + n2 + n3) / 3.0f;
+								// vec3 normal = normalize((n1 * _intersection.barycentric.x) + (n2 * _intersection.barycentric.y) + (n3 * _intersection.barycentric.z));
+								// vec3 normal = (normalize(n1 * _intersection.barycentric.x) + normalize(n2 * _intersection.barycentric.y) + normalize(n3 * _intersection.barycentric.z));
 
-							ray.direction = reflect(ray.direction, normal);
+								vec3 normal = (n1 * _intersection.barycentric.x) + (n2 * _intersection.barycentric.y) + (n3 * _intersection.barycentric.z);
+
+								ray.origin = _intersection.point;
+
+								ray.direction = reflect(ray.direction, normal);
 
 
 
-							intersection_box = ray.origin;
-							intersection_box_far = ray.origin;
-							intersection_box_far1 = ray.origin;
-							intersection = ray.origin;
+								intersection_box = ray.origin;
+								intersection_box_far = ray.origin;
+								intersection_box_far1 = ray.origin;
+								intersection = ray.origin;
 
-							_intersection.point = ray.origin;
-							_intersection.distance = 999999.0f;
+								_intersection.point = ray.origin;
+								_intersection.distance = 999999.0f;
 
-							p1 = vec3(0.0f);
-							p2 = vec3(0.0f);
-							p3 = vec3(0.0f);
+								p1 = vec3(0.0f);
+								p2 = vec3(0.0f);
+								p3 = vec3(0.0f);
 
-							next_bounding_box_index = 0;
+								next_bounding_box_index = 0;
+
+								vi = _intersection.vertex_indices;
+							}
+							else
+							{
+								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+								return;
+							}
 						}
 					}
 				}
@@ -911,7 +1041,7 @@ extern "C" void constructRenderityWrappers2 (void)
 	object4->makeBoundingBox();
 
 	// scene->addObjects({ _object, object2, object3, object4 });
-	scene->addObjects({ object3 });
+	scene->addObjects({ _object, object3 });
 
 	scene->test();
 }
