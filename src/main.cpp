@@ -133,16 +133,13 @@ extern "C" void initTransitionStack (void)
 	_stack1 = new RDTY::TransitionStack { 64 };
 }
 
-extern "C" void updateTransitions0 (void)
+extern "C" void updateTransitions (RDTY::TransitionStack* stack)
 {
-	_stack0->calculateFrametime();
-	_stack0->update();
-}
-
-extern "C" void updateTransitions1 (void)
-{
-	_stack1->calculateFrametime();
-	_stack1->update();
+	// for (;;)
+	// {
+		stack->calculateFrametime();
+		stack->update();
+	// }
 }
 
 extern "C" void logStacks (void)
@@ -429,8 +426,8 @@ extern "C" void constructRenderityWrappers (void)
 
 	_object->dimension_segment_count = 32;
 	object2->dimension_segment_count = 32;
-	object3->dimension_segment_count = 16;
-	object4->dimension_segment_count = 16;
+	object3->dimension_segment_count = 32;
+	object4->dimension_segment_count = 32;
 
 	// memcpy(object2->position_data.data(), std::vector({ -1.0f, -1.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f }).data(), 36);
 
@@ -791,7 +788,7 @@ extern "C" void constructRenderityWrappers (void)
 
 
 
-						if (testPointInsideBox(ray.origin, bounding_box.min, bounding_box.max))
+						if (testPointInsideBox(ray.origin, bounding_box.min - 0.00001f, bounding_box.max + 0.00001f))
 						{
 							// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 							// return;
@@ -830,7 +827,7 @@ extern "C" void constructRenderityWrappers (void)
 											_intersection.distance = ray_origin_to_intersection_distance;
 											_intersection.point = intersection;
 											_intersection.vertex_indices = vertex_indices;
-											_intersection.bounding_box_index = bounding_box_index;
+											// _intersection.bounding_box_index = bounding_box_index;
 											_intersection.barycentric = getBarycentricCoords(_intersection.point, p1, p2, p3);
 										}
 									}
@@ -843,12 +840,15 @@ extern "C" void constructRenderityWrappers (void)
 									break;
 								}
 
-								Ray rrr = ray;
+								// Ray rrr = ray;
 
-								rrr.origin -= ray.direction * 100.0f;
+								// rrr.origin -= ray.direction * 10000.0f;
 
-								getIntersectionRayBox(rrr, bounding_box.min, bounding_box.max);
-								getIntersectionRayBoxFar(rrr, box.min, box.max);
+								// getIntersectionRayBox(rrr, bounding_box.min, bounding_box.max);
+								// getIntersectionRayBoxFar(rrr, box.min, box.max);
+
+								getIntersectionRayBox(ray, bounding_box.min, bounding_box.max);
+								getIntersectionRayBoxFar(ray, box.min, box.max);
 
 								if (distance(intersection_box_far, intersection_box_far1) < 0.00001f)
 								{
@@ -907,7 +907,7 @@ extern "C" void constructRenderityWrappers (void)
 											_intersection.distance = ray_origin_to_intersection_distance;
 											_intersection.point = intersection;
 											_intersection.vertex_indices = vertex_indices;
-											_intersection.bounding_box_index = bounding_box_index;
+											// _intersection.bounding_box_index = bounding_box_index;
 											_intersection.barycentric = getBarycentricCoords(_intersection.point, p1, p2, p3);
 										}
 									}
@@ -951,23 +951,10 @@ extern "C" void constructRenderityWrappers (void)
 								{
 									fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-									// vec3 n3 = scene_normal_data[_intersection.vertex_indices.x];
-									// vec3 n1 = scene_normal_data[_intersection.vertex_indices.y];
-									// vec3 n2 = scene_normal_data[_intersection.vertex_indices.z];
-
-									// vec3 normal = ((n1 * _intersection.barycentric.x) + (n2 * _intersection.barycentric.y) + (n3 * _intersection.barycentric.z));
-
-									// // vec3 normal = normalize(n1 + n2 + n3);
-
-									// float diffuse = dot(normal, normalize(vec3(1.0f, 1.0f, 1.0f)));
-
-									// fragment_color = vec4(vec3(diffuse), 1.0f);
-
 									return;
 								}
 
 								fragment_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-								// fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 								return;
 							}
@@ -1041,7 +1028,17 @@ extern "C" void constructRenderityWrappers2 (void)
 	object4->makeBoundingBox();
 
 	// scene->addObjects({ _object, object2, object3, object4 });
-	scene->addObjects({ _object, object3 });
+	scene->addObjects({ _object, object2 });
 
-	scene->test();
+	// scene->test();
+
+	// scene->test2(_object);
+	// scene->test2(object2);
+	// scene->test2(object3);
+	// scene->test2(object4);
+}
+
+extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
+{
+	scene->test2(object);
 }
