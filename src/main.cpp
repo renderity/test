@@ -24,18 +24,11 @@
 
 
 #ifdef __wasm__
-	extern "C" void console_log (size_t);
-	#define LOG(x) console_log((size_t) x);
-
-	extern "C" void console_log_f (float);
-	#define LOGF(x) console_log_f((float) x);
-
-	// extern "C" size_t getTime (void);
+	#include "renderity/wasm-wrapper/src/wasm-log.h"
 #else
 	#include <iostream>
 
 	#define LOG(x) std::cout << x << std::endl;
-	#define LOGF(x) std::cout << x << std::endl;
 #endif
 
 
@@ -135,11 +128,13 @@ extern "C" void initTransitionStack (void)
 
 extern "C" void updateTransitions (RDTY::TransitionStack* stack)
 {
-	// for (;;)
-	// {
-		stack->calculateFrametime();
-		stack->update();
-	// }
+	#ifndef __wasm__
+		for (;;)
+	#endif
+		{
+			stack->calculateFrametime();
+			stack->update();
+		}
 }
 
 extern "C" void logStacks (void)
@@ -177,8 +172,26 @@ extern "C" void startTransition2 (void)
 	orbit_transition2.start2(5000, ___test2);
 }
 
+RDTY::WRAPPERS::P* p1 {};
+RDTY::WRAPPERS::P* p2 {};
+
+float* _min1 {};
+float* _min2 {};
+float* _max1 {};
+float* _max2 {};
+
 extern "C" void constructRenderityWrappers (void)
 {
+	p1 = new RDTY::WRAPPERS::P;
+	p2 = new RDTY::WRAPPERS::P;
+
+	_min1 = new float [3] {};
+	_min2 = new float [3] {};
+	_max1 = new float [3] {};
+	_max2 = new float [3] {};
+
+
+
 	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 
 	scene = new RDTY::WRAPPERS::Scene;
@@ -1024,8 +1037,8 @@ extern "C" void constructRenderityWrappers2 (void)
 {
 	_object->makeBoundingBox();
 	object2->makeBoundingBox();
-	object3->makeBoundingBox();
-	object4->makeBoundingBox();
+	// object3->makeBoundingBox();
+	// object4->makeBoundingBox();
 
 	// scene->addObjects({ _object, object2, object3, object4 });
 	scene->addObjects({ _object, object2 });
@@ -1038,7 +1051,7 @@ extern "C" void constructRenderityWrappers2 (void)
 	// scene->test2(object4);
 }
 
-extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
+extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object, RDTY::WRAPPERS::P* p, float* _min, float* _max)
 {
-	scene->test2(object);
+	scene->test2(object, p, _min, _max);
 }
