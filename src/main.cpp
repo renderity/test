@@ -172,26 +172,8 @@ extern "C" void startTransition2 (void)
 	orbit_transition2.start2(5000, ___test2);
 }
 
-RDTY::WRAPPERS::P* p1 {};
-RDTY::WRAPPERS::P* p2 {};
-
-float* _min1 {};
-float* _min2 {};
-float* _max1 {};
-float* _max2 {};
-
 extern "C" void constructRenderityWrappers (void)
 {
-	p1 = new RDTY::WRAPPERS::P;
-	p2 = new RDTY::WRAPPERS::P;
-
-	_min1 = new float [3] {};
-	_min2 = new float [3] {};
-	_max1 = new float [3] {};
-	_max2 = new float [3] {};
-
-
-
 	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 
 	scene = new RDTY::WRAPPERS::Scene;
@@ -960,7 +942,10 @@ extern "C" void constructRenderityWrappers (void)
 						{
 							if (bounce_count == 1)
 							{
-								if (_intersection.distance < 999998.0f)
+								// TODO: How to avoid this condition:
+								// "dot(ray.direction, _intersection.point - ray.origin) > 0.0f"
+								// ?
+								if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
 								{
 									fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
@@ -1035,23 +1020,13 @@ extern "C" void updateObjectsData (void)
 
 extern "C" void constructRenderityWrappers2 (void)
 {
-	_object->makeBoundingBox();
-	object2->makeBoundingBox();
-	// object3->makeBoundingBox();
-	// object4->makeBoundingBox();
-
-	// scene->addObjects({ _object, object2, object3, object4 });
-	scene->addObjects({ _object, object2 });
-
-	// scene->test();
-
-	// scene->test2(_object);
-	// scene->test2(object2);
-	// scene->test2(object3);
-	// scene->test2(object4);
+	scene->addObjects({ _object, object2, object3, object4 });
+	// scene->addObjects({ _object, object2 });
 }
 
-extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object, RDTY::WRAPPERS::P* p, float* _min, float* _max)
+extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
 {
-	scene->test2(object, p, _min, _max);
+	object->makeBoundingBox();
+
+	scene->test2(object);
 }
