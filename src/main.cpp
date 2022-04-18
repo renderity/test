@@ -174,7 +174,7 @@ extern "C" void startTransition2 (void)
 
 extern "C" void constructRenderityWrappers (void)
 {
-	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
+	renderer = new RDTY::WRAPPERS::Renderer { .width = 800 * 2, .height = 600 * 2 };
 
 	scene = new RDTY::WRAPPERS::Scene;
 
@@ -627,7 +627,8 @@ extern "C" void constructRenderityWrappers (void)
 					intersection_box_far1 *= tFar;
 					intersection_box_far1 += _ray.origin;
 
-					return true;
+					// return true;
+					return (dot(ray.direction, intersection_box - ray.origin) > 0.0f);
 				}
 
 				// bool getIntersectionRayBoxFar (Ray _ray, vec3 box_min, vec3 box_max)
@@ -945,7 +946,8 @@ extern "C" void constructRenderityWrappers (void)
 								// TODO: How to avoid this condition:
 								// "dot(ray.direction, _intersection.point - ray.origin) > 0.0f"
 								// ?
-								if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
+								// if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
+								if (_intersection.distance < 999998.0f)
 								{
 									fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
@@ -1028,5 +1030,5 @@ extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
 {
 	object->makeBoundingBox();
 
-	scene->test2(object);
+	scene->testSimd(object);
 }
