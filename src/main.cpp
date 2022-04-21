@@ -174,7 +174,7 @@ extern "C" void startTransition2 (void)
 
 extern "C" void constructRenderityWrappers (void)
 {
-	renderer = new RDTY::WRAPPERS::Renderer { .width = 800 * 2, .height = 600 * 2 };
+	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 
 	scene = new RDTY::WRAPPERS::Scene;
 
@@ -1023,7 +1023,7 @@ extern "C" void updateObjectsData (void)
 extern "C" void constructRenderityWrappers2 (void)
 {
 	scene->addObjects({ _object, object2, object3, object4 });
-	// scene->addObjects({ _object, object2 });
+	// scene->addObjects({ _object, object2, object3 });
 }
 
 extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
