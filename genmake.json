@@ -110,6 +110,7 @@
 					"$(REPS)/renderity/wrappers/src/scene/scene.h",
 
 					"$(REPS)/renderity/renderers/src/base/renderer.h",
+					"$(REPS)/renderity/renderers/src/vulkan/helpers.h",
 					"$(REPS)/renderity/renderers/src/vulkan/vulkan.h"
 				]
 			},
@@ -142,6 +143,7 @@
 					"$(REPS)/renderity/renderers/src/opengl/opengl.cpp",
 					"$(REPS)/renderity/renderers/src/opengl/opengl.h",
 					"$(REPS)/renderity/renderers/src/vulkan/vulkan.cpp",
+					"$(REPS)/renderity/renderers/src/vulkan/helpers.h",
 					"$(REPS)/renderity/renderers/src/vulkan/vulkan.h"
 				]
 			}

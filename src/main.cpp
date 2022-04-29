@@ -19,7 +19,9 @@
 #include "renderity/wrappers/src/object/object.h"
 #include "renderity/wrappers/src/scene/scene.h"
 
-#include "renderity/test/src/objects/sphere_10_64_64.h"
+#include "renderity/test/src/objects/o1.h"
+#include "renderity/test/src/objects/o2.h"
+#include "renderity/test/src/objects/o3.h"
 
 
 
@@ -33,7 +35,15 @@
 
 
 
-const Sphere_10_64_64 sphere_10_64_64;
+#include <iostream>
+using std::cout;
+using std::endl;
+
+
+
+const O1 o1;
+const O2 o2;
+const O3 o3;
 
 
 
@@ -55,6 +65,8 @@ RDTY::WRAPPERS::DescriptorSet* desc_set2 {};
 
 RDTY::WRAPPERS::UniformBlock* surface_uniform_block_camera {};
 RDTY::WRAPPERS::StorageBlock* storage_block {};
+
+RDTY::WRAPPERS::DescriptorSet* descriptor_set_scene {};
 
 RDTY::WRAPPERS::Material* surface_material {};
 RDTY::WRAPPERS::Object* surface_object {};
@@ -172,7 +184,7 @@ extern "C" void startTransition2 (void)
 	orbit_transition2.start2(5000, ___test2);
 }
 
-extern "C" void constructRenderityWrappers (void)
+extern "C" void constructStage1 (void)
 {
 	renderer = new RDTY::WRAPPERS::Renderer { .width = 800, .height = 600 };
 
@@ -452,7 +464,7 @@ extern "C" void constructRenderityWrappers (void)
 		{
 			.binding = 4,
 			.name = "Camera",
-			.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT},
+			.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
 
 			.uniforms =
 			{
@@ -1013,17 +1025,43 @@ extern "C" void constructRenderityWrappers (void)
 
 extern "C" void updateObjectsData (void)
 {
-	_object->position_data.resize(sizeof(sphere_10_64_64.position_data) / 4);
-	memcpy(_object->position_data.data(), sphere_10_64_64.position_data, sizeof(sphere_10_64_64.position_data));
+	_object->position_data.resize(sizeof(o1.position_data) / 4);
+	memcpy(_object->position_data.data(), o1.position_data, sizeof(o1.position_data));
 
-	_object->index_data.resize(sizeof(sphere_10_64_64.index_data) / 4);
-	memcpy(_object->index_data.data(), sphere_10_64_64.index_data, sizeof(sphere_10_64_64.index_data));
+	_object->normal_data.resize(sizeof(o1.normal_data) / 4);
+	memcpy(_object->normal_data.data(), o1.normal_data, sizeof(o1.normal_data));
+
+	_object->index_data.resize(sizeof(o1.index_data) / 4);
+	memcpy(_object->index_data.data(), o1.index_data, sizeof(o1.index_data));
+
+
+
+	// object2->position_data.resize(sizeof(o2.position_data) / 4);
+	// memcpy(object2->position_data.data(), o2.position_data, sizeof(o2.position_data));
+
+	// object2->normal_data.resize(sizeof(o2.normal_data) / 4);
+	// memcpy(object2->normal_data.data(), o2.normal_data, sizeof(o2.normal_data));
+
+	// object2->index_data.resize(sizeof(o2.index_data) / 4);
+	// memcpy(object2->index_data.data(), o2.index_data, sizeof(o2.index_data));
+
+
+
+	// object3->position_data.resize(sizeof(o3.position_data) / 4);
+	// memcpy(object3->position_data.data(), o3.position_data, sizeof(o3.position_data));
+
+	// object3->normal_data.resize(sizeof(o3.normal_data) / 4);
+	// memcpy(object3->normal_data.data(), o3.normal_data, sizeof(o3.normal_data));
+
+	// object3->index_data.resize(sizeof(o3.index_data) / 4);
+	// memcpy(object3->index_data.data(), o3.index_data, sizeof(o3.index_data));
 }
 
-extern "C" void constructRenderityWrappers2 (void)
+extern "C" void constructStage2 (void)
 {
-	scene->addObjects({ _object, object2, object3, object4 });
+	// scene->addObjects({ _object, object2, object3, object4 });
 	// scene->addObjects({ _object, object2, object3 });
+	scene->addObjects({ _object });
 }
 
 extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
@@ -1031,4 +1069,73 @@ extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
 	object->makeBoundingBox();
 
 	scene->testSimd(object);
+}
+
+extern "C" void constructStage3 (void)
+{
+	descriptor_set_scene =
+		new RDTY::WRAPPERS::DescriptorSet
+		{
+			.bindings =
+			{
+				surface_uniform_block_camera,
+
+				new RDTY::WRAPPERS::StorageBlock
+				{
+					.binding = 3,
+
+					.data = scene->boxes,
+
+					.size = sizeof(scene->boxes),
+
+					.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
+				},
+
+				new RDTY::WRAPPERS::StorageBlock
+				{
+					.binding = 1,
+
+					.data = scene->triangles,
+
+					.size = sizeof(scene->triangles),
+
+					.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
+				},
+
+				new RDTY::WRAPPERS::StorageBlock
+				{
+					.binding = 0,
+
+					.data = scene->position_data.data(),
+
+					.size = scene->position_data.size() * sizeof(float),
+
+					.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
+				},
+
+				new RDTY::WRAPPERS::StorageBlock
+				{
+					.binding = 5,
+
+					.data = scene->normal_data.data(),
+
+					.size = scene->normal_data.size() * sizeof(float),
+
+					.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
+				},
+
+				new RDTY::WRAPPERS::StorageBlock
+				{
+					.binding = 2,
+
+					.data = scene->index_data.data(),
+
+					.size = scene->index_data.size() * sizeof(uint32_t),
+
+					.visibility = { RDTY::WRAPPERS::DESCRIPTOR_BINDING::Visibility::FRAGMENT },
+				},
+			},
+		};
+
+	surface_material->descriptor_sets.push_back(descriptor_set_scene);
 }
