@@ -1059,9 +1059,9 @@ extern "C" void updateObjectsData (void)
 
 extern "C" void constructStage2 (void)
 {
-	// scene->addObjects({ _object, object2, object3, object4 });
+	scene->addObjects({ _object, object2, object3, object4 });
 	// scene->addObjects({ _object, object2, object3 });
-	scene->addObjects({ _object });
+	// scene->addObjects({ _object });
 }
 
 extern "C" void generateBoxes (RDTY::WRAPPERS::Object* object)
