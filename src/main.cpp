@@ -71,9 +71,12 @@ RDTY::WRAPPERS::DescriptorSet* descriptor_set_scene {};
 RDTY::WRAPPERS::Material* surface_material {};
 RDTY::WRAPPERS::Object* surface_object {};
 
-float curve_values [5000];
+float curve_values [300];
 RDTY::Transition orbit_transition;
 RDTY::Transition orbit_transition2;
+
+float xxx {};
+float yyy {};
 
 extern "C" void ___test (const size_t& time_gone)
 {
@@ -86,7 +89,10 @@ extern "C" void ___test (const size_t& time_gone)
 		prev_time = 0;
 	}
 
-	orbit->rotation_speed_x = orbit->rotation_speed_y = temp * (time_gone - prev_time) * 0.01;
+	// orbit->rotation_speed_x = orbit->rotation_speed_y = temp * (time_gone - prev_time) * 0.01;
+
+	orbit->rotation_speed_x *= temp;
+	orbit->rotation_speed_y *= temp;
 
 	prev_time = time_gone;
 
@@ -131,7 +137,7 @@ extern "C" void initTransitionStack (void)
 		0.0f,
 		0.0f,
 
-		5000
+		300
 	);
 
 	_stack0 = new RDTY::TransitionStack { 64 };
@@ -155,7 +161,7 @@ extern "C" void logStacks (void)
 	LOG(_stack1->length)
 }
 
-extern "C" void startTransition (void)
+extern "C" void startTransition (const float _xxx, const float _yyy)
 {
 	// auto ___test = [&] (const size_t& time_gone)
 	// {
@@ -176,12 +182,18 @@ extern "C" void startTransition (void)
 	// 	orbit->update();
 	// };
 
-	orbit_transition.start2(5000, ___test);
+	orbit->rotation_speed_x += _xxx;
+	orbit->rotation_speed_y += _yyy;
+
+	// LOG(_xxx)
+	// LOG(_yyy)
+
+	orbit_transition.start2(300, ___test);
 }
 
 extern "C" void startTransition2 (void)
 {
-	orbit_transition2.start2(5000, ___test2);
+	orbit_transition2.start2(300, ___test2);
 }
 
 extern "C" void constructStage1 (void)
@@ -531,9 +543,9 @@ extern "C" void constructStage1 (void)
 
 
 				#ifdef VULKAN
-					#define SET(_set) set = _set,
+					#define BINDING(_set, _binding) set = _set, binding = _binding
 				#else
-					#define SET(_set)
+					#define BINDING(_set, _binding) binding = _binding
 				#endif
 
 
@@ -546,22 +558,28 @@ extern "C" void constructStage1 (void)
 
 
 
-				layout (SET(0) binding = 0, std430) readonly buffer ScenePositionData
+				struct Vertex
 				{
-					vec3 scene_position_data [];
+					vec3 position;
+					uint object_index;
 				};
 
-				layout (SET(0) binding = 5, std430) readonly buffer SceneNormalData
+				layout (BINDING(0, 0), std430) readonly buffer SceneVertexData
+				{
+					Vertex scene_vertex_data [];
+				};
+
+				layout (BINDING(0, 5), std430) readonly buffer SceneNormalData
 				{
 					vec3 scene_normal_data [];
 				};
 
-				// layout (SET(0) binding = 2, std430) readonly buffer SceneIndexData
+				// layout (BINDING(0, 2), std430) readonly buffer SceneIndexData
 				// {
 				// 	uvec3 scene_index_data [];
 				// };
 
-				layout (SET(0) binding = 1, std430) readonly buffer SceneTriData
+				layout (BINDING(0, 1), std430) readonly buffer SceneTriData
 				{
 					// uint triangles_data [];
 					uvec3 triangles_data [];
@@ -575,17 +593,43 @@ extern "C" void constructStage1 (void)
 					uint triangle_end;
 				};
 
-				layout (SET(0) binding = 3, std430) readonly buffer BoxTreeUint32
+				layout (BINDING(0, 3), std430) readonly buffer BoxTreeUint32
 				{
 					Box boxes [];
 				};
 
-				layout (SET(0) binding = 4) uniform Camera
+				layout (BINDING(0, 4)) uniform Camera
 				{
 					mat4 matrix;
 					// mat4 projection_matrix;
 					// mat4 view_matrix;
 				} camera;
+
+
+
+				struct Material
+				{
+					vec4 color;
+				};
+
+				struct Object
+				{
+					Material material;
+				};
+
+				Material materials[4];
+
+				// materials[0].color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
+				// materials[1].color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				// materials[2].color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+				// materials[3].color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+
+				Object objects[4];
+
+				// objects[0].material = materials[0];
+				// objects[1].material = materials[1];
+				// objects[2].material = materials[2];
+				// objects[3].material = materials[3];
 
 
 
@@ -734,25 +778,48 @@ extern "C" void constructStage1 (void)
 					vec3 point;
 					uvec3 vertex_indices;
 					vec3 barycentric;
+					vec3 normal;
 					float distance;
 					uint bounding_box_index;
 				};
 
-				bool testPointInsideBox (vec3 point, vec3 min, vec3 max)
+				// bool testPointInsideBox (vec3 point, vec3 min, vec3 max)
+				// {
+				// 	return
+				// 	(
+				// 		point.x <= max.x && point.x >= min.x &&
+				// 		point.y <= max.y && point.y >= min.y &&
+				// 		point.z <= max.z && point.z >= min.z
+				// 	);
+				// }
+
+				bool testPointInsideBox (vec3 point, vec3 _min, vec3 _max)
 				{
-					return
-					(
-						point.x <= max.x && point.x >= min.x &&
-						point.y <= max.y && point.y >= min.y &&
-						point.z <= max.z && point.z >= min.z
-					);
+					return (min(point, _max) == max(point, _min));
 				}
 
 
 
 				void main (void)
 				{
+					materials[0].color = vec4(0.5f, 0.5f, 0.0f, 1.0f);
+					// materials[0].color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+					materials[1].color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+					materials[2].color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+					materials[3].color = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+
+					objects[0].material = materials[0];
+					objects[1].material = materials[1];
+					objects[2].material = materials[2];
+					objects[3].material = materials[3];
+
+
+
 					uint bounce_count = 0;
+
+					vec3 diffuse = vec3(1.0f);
+
+					vec3 mixed = vec3(1.0f);
 
 
 
@@ -770,9 +837,13 @@ extern "C" void constructStage1 (void)
 					intersection_box_far1 = ray.origin;
 					intersection = ray.origin;
 
+					Intersection _intersection2;
+
 					Intersection _intersection;
 					_intersection.point = ray.origin;
 					_intersection.distance = 999999.0f;
+
+					Intersection _intersection_o;
 
 					vec3 p1 = vec3(0.0f);
 					vec3 p2 = vec3(0.0f);
@@ -796,7 +867,8 @@ extern "C" void constructStage1 (void)
 
 
 
-						if (testPointInsideBox(ray.origin, bounding_box.min - 0.00001f, bounding_box.max + 0.00001f))
+						// if (testPointInsideBox(ray.origin, bounding_box.min - 0.00001f, bounding_box.max + 0.00001f))
+						if (testPointInsideBox(ray.origin, bounding_box.min + 0.00001f, bounding_box.max - 0.00001f))
 						{
 							// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 							// return;
@@ -818,9 +890,9 @@ extern "C" void constructStage1 (void)
 								{
 									uvec3 vertex_indices = triangles_data[t_start];
 
-									p1 = scene_position_data[vertex_indices.x];
-									p2 = scene_position_data[vertex_indices.y];
-									p3 = scene_position_data[vertex_indices.z];
+									p1 = scene_vertex_data[vertex_indices.x].position;
+									p2 = scene_vertex_data[vertex_indices.y].position;
+									p3 = scene_vertex_data[vertex_indices.z].position;
 
 
 
@@ -832,6 +904,8 @@ extern "C" void constructStage1 (void)
 
 										if (ray_origin_to_intersection_distance < _intersection.distance)
 										{
+											_intersection_o = _intersection;
+
 											_intersection.distance = ray_origin_to_intersection_distance;
 											_intersection.point = intersection;
 											_intersection.vertex_indices = vertex_indices;
@@ -875,6 +949,9 @@ extern "C" void constructStage1 (void)
 						}
 						else if (getIntersectionRayBox(ray, bounding_box.min, bounding_box.max))
 						{
+							// fragment_color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+							// return;
+
 							float size = bounding_box.max.x - bounding_box.min.x;
 							float segment_size = size / dimension_segment_count;
 
@@ -897,9 +974,9 @@ extern "C" void constructStage1 (void)
 
 									uvec3 vertex_indices = triangles_data[t_start];
 
-									p1 = scene_position_data[vertex_indices.x];
-									p2 = scene_position_data[vertex_indices.y];
-									p3 = scene_position_data[vertex_indices.z];
+									p1 = scene_vertex_data[vertex_indices.x].position;
+									p2 = scene_vertex_data[vertex_indices.y].position;
+									p3 = scene_vertex_data[vertex_indices.z].position;
 
 
 
@@ -912,6 +989,8 @@ extern "C" void constructStage1 (void)
 
 										if (ray_origin_to_intersection_distance < _intersection.distance)
 										{
+											_intersection_o = _intersection;
+
 											_intersection.distance = ray_origin_to_intersection_distance;
 											_intersection.point = intersection;
 											_intersection.vertex_indices = vertex_indices;
@@ -953,30 +1032,29 @@ extern "C" void constructStage1 (void)
 
 						if (next_bounding_box_index == 0)
 						{
-							if (bounce_count == 1)
-							{
-								// TODO: How to avoid this condition:
-								// "dot(ray.direction, _intersection.point - ray.origin) > 0.0f"
-								// ?
-								// if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
-								if (_intersection.distance < 999998.0f)
-								{
-									fragment_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+							// if (bounce_count == 1)
+							// {
+							// 	uint object_index = scene_vertex_data[_intersection.vertex_indices.x].object_index;
 
-									return;
-								}
+							// 	// // TODO: How to avoid this condition:
+							// 	// // "dot(ray.direction, _intersection.point - ray.origin) > 0.0f"
+							// 	// // ?
+							// 	// // if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
+							// 	// if (_intersection.distance < 999998.0f)
+							// 	// // if (_intersection.distance < 25.0f)
+							// 	// {
+							// 	// 	// fragment_color = objects[object_index].material.color;
 
-								fragment_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+							// 	// 	// return;
+							// 	// }
 
-								return;
-							}
+							// 	fragment_color = vec4(objects[object_index].material.color.rgb * diffuse, 1.0f);
+
+							// 	return;
+							// }
 
 							if (_intersection.distance < 999998.0f)
 							{
-								++bounce_count;
-
-
-
 								vec3 n1 = scene_normal_data[_intersection.vertex_indices.x];
 								vec3 n2 = scene_normal_data[_intersection.vertex_indices.y];
 								vec3 n3 = scene_normal_data[_intersection.vertex_indices.z];
@@ -988,7 +1066,24 @@ extern "C" void constructStage1 (void)
 
 								vec3 normal = (n1 * _intersection.barycentric.x) + (n2 * _intersection.barycentric.y) + (n3 * _intersection.barycentric.z);
 
+								_intersection.normal = normal;
+
 								ray.origin = _intersection.point;
+
+								diffuse *= dot(normal, -ray.direction);
+
+								// if (bounce_count == 0)
+								// {
+								// 	_intersection_o = _intersection;
+								// }
+								// else
+								// {
+								// 	uint object_index_o = scene_vertex_data[_intersection_o.vertex_indices.x].object_index;
+
+								// 	// diffuse *= objects[object_index_o].material.color.rgb;
+
+								// 	mixed = mix(mixed, objects[object_index_o].material.color.rgb, 0.5);
+								// }
 
 								ray.direction = reflect(ray.direction, normal);
 
@@ -1009,10 +1104,56 @@ extern "C" void constructStage1 (void)
 								next_bounding_box_index = 0;
 
 								vi = _intersection.vertex_indices;
+
+
+
+								if (bounce_count == 2)
+								{
+									uint object_index = scene_vertex_data[_intersection.vertex_indices.x].object_index;
+
+									// uint object_index_o = scene_vertex_data[_intersection_o.vertex_indices.x].object_index;
+
+									// // TODO: How to avoid this condition:
+									// // "dot(ray.direction, _intersection.point - ray.origin) > 0.0f"
+									// // ?
+									// // if (_intersection.distance < 999998.0f && dot(ray.direction, _intersection.point - ray.origin) > 0.0f)
+									// if (_intersection.distance < 999998.0f)
+									// // if (_intersection.distance < 25.0f)
+									// {
+									// 	// fragment_color = objects[object_index].material.color;
+
+									// 	// return;
+									// }
+
+									fragment_color = vec4(mix(objects[object_index].material.color.rgb, mixed, 0.5) * diffuse, 1.0f);
+
+									return;
+								}
+								else
+								{
+									// _intersection_o = _intersection;
+
+									uint object_index = scene_vertex_data[_intersection.vertex_indices.x].object_index;
+
+									mixed = mix(objects[object_index].material.color.rgb, mixed, 0.5);
+
+									// mixed = vec3(0.0f);
+								}
+
+								++bounce_count;
 							}
 							else
 							{
-								fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+								if (bounce_count == 0)
+								{
+									fragment_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+								}
+								else
+								{
+									uint object_index = scene_vertex_data[_intersection.vertex_indices.x].object_index;
+
+									fragment_color = vec4(mix(objects[object_index].material.color.rgb, mixed, 0.5) * diffuse, 1.0f);
+								}
 
 								return;
 							}
@@ -1060,7 +1201,7 @@ extern "C" void updateObjectsData (void)
 extern "C" void constructStage2 (void)
 {
 	scene->addObjects({ _object, object2, object3, object4 });
-	// scene->addObjects({ _object, object2, object3 });
+	// scene->addObjects({ _object, object2 });
 	// scene->addObjects({ _object });
 }
 

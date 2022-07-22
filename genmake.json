@@ -3,8 +3,8 @@
 	{
 		"gcc-x64":
 		{
-			"LIBS": "/home/denis/libs",
-			"REPS": "/home/denis/reps"
+			"LIBS": "~/libs",
+			"REPS": "~/reps"
 		}
 	},
 
